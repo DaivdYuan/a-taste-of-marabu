@@ -1,0 +1,17 @@
+{
+  "name": "main_server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "delay": "^5.0.0",
+    "is-valid-domain": "^0.1.6",
+    "json-canonicalize": "^1.0.4"
+  }
+}
