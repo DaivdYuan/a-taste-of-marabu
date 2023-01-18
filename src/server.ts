@@ -7,9 +7,12 @@ import delay from 'delay';
 var net = require("net");
 
 const PORT = 18018;
+const PEERS = ["45.63.84.226", "45.63.89.228", "144.202.122.8"]
 
 var server = net.createServer();
 server.on("connection", handleConnection);
+
+const client = new net.Socket();
 
 server.listen(PORT, function () {
   console.log("server listening to %j", server.address());
