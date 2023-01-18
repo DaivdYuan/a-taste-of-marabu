@@ -4,10 +4,12 @@ import { actionList } from "./actions";
 
 var net = require("net");
 
+const PORT = 18018;
+
 var server = net.createServer();
 server.on("connection", handleConnection);
 
-server.listen(8080, function () {
+server.listen(PORT, function () {
   console.log("server listening to %j", server.address());
 });
 
@@ -36,7 +38,7 @@ function handleConnection(conn: any): void {
     var data: {[key: string]:any} = {}, segment: string;
     var segments: string[] = d.split("\n");
     console.log(segments);
-    for (let i = 0; i < segments.length - 1; i++) {
+    for (let i = 0; i < segments.length; i++) {
       segment = segments[i];
       try {
         data = JSON.parse(segment);
