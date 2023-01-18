@@ -11,9 +11,10 @@ client.connect(SERVER_PORT, SERVER_HOST, async () => {
     console.log('Connected to server.');
     await delay(3000);
     // client.write('invalid message from client.\nAnd there');
-    client.write(Messages.helloMessage.json + '\nAnd there')
-    await delay(3000);
+    // client.write(Messages.helloMessage.json + '\nAnd there')
+    // await delay(3000);
     client.write('is a second part\n');
+    // client.write(Messages.getPeersMessage.json + '\n');
 });
 
 client.on('data', (data) => {

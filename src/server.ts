@@ -47,18 +47,18 @@ function handleConnection(conn: any): void {
         data = JSON.parse(segment);
         console.log("Parsed:", data);
 
-        if (!("type" in data) || !actionList.includes(data.type)){
-          throwError("INVALID_FORMAT", segment);
-        }
-        if (!startedHandshake){
-           if (!checkEquivalent<string>(JSON.stringify(data), Messages.helloMessage.json)){
-            throwError("INVALID_HANDSHAKE")
-           }
-           startedHandshake = true;
-        }
+      if (!("type" in data) || !actionList.includes(data.type)){
+        throwError("INVALID_FORMAT", segment);
+      }
+      if (!startedHandshake){
+          if (!checkEquivalent<string>(JSON.stringify(data), Messages.helloMessage.json)){
+          throwError("INVALID_HANDSHAKE")
+          }
+          startedHandshake = true;
+      }
 
       } catch (e) {
-        throwError("INVAlID_FORMAT", segment)
+        throwError("INVALID_FORMAT", segment)
       }
       
       var curAction = data.type;
@@ -79,8 +79,9 @@ function handleConnection(conn: any): void {
   }
 
   function throwError(error: string, message: string = ''): void {
-    console.log(error, message);
-    send(Messages.ErrorMessageList["INVALID_FORMAT"]);
+    console.log("Error: " + error);
+    console.log("Message: " + message);
+    send(Messages.ErrorMessageList[error]);
     conn.destroy();
   }
 

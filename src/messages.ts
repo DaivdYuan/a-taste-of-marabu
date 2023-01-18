@@ -18,7 +18,7 @@ class HelloMessage implements MessageTemplate{
 export const helloMessage = new HelloMessage();
 
 class GetPeersMessage implements MessageTemplate{
-    readonly type = "getPeers";
+    readonly type = "getpeers";
     get json(): string{
         return canonicalize(this);
     }
