@@ -1,3 +1,5 @@
+import { canonicalize, canonicalizeEx } from 'json-canonicalize';
+
 export type messageType = HelloMessage | GetPeersMessage | ErrorMessage;
 
 interface MessageTemplate{
@@ -10,7 +12,7 @@ class HelloMessage implements MessageTemplate{
     readonly version: string = "0.9.0";
     readonly agent: string = "Marabu-Core Client 0.9";
     get json(): string{
-        return JSON.stringify(this);
+        return canonicalize(this);
     };
 }
 export const helloMessage = new HelloMessage();
@@ -18,7 +20,7 @@ export const helloMessage = new HelloMessage();
 class GetPeersMessage implements MessageTemplate{
     readonly type = "getPeers";
     get json(): string{
-        return JSON.stringify(this);
+        return canonicalize(this);
     }
 }
 export const getPeersMessage = new GetPeersMessage();
@@ -27,7 +29,7 @@ export class PeersMessage implements MessageTemplate{
     readonly type = "peers";
     readonly peers: string[] = [];
     get json(): string{
-        return JSON.stringify(this);
+        return canonicalize(this);
     }
 }
 
@@ -42,7 +44,7 @@ class ErrorMessage implements MessageTemplate{
     }
 
     get json(): string{
-        return JSON.stringify(this);
+        return canonicalize(this);
     }
 }
 

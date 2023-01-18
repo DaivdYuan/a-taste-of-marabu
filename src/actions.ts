@@ -1,4 +1,5 @@
 export const actionList = [
+    "hello",
     "error",
     "getpeers",
     "peers",

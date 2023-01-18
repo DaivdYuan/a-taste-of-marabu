@@ -1,6 +1,8 @@
 import * as Messages from "./messages";
 import { checkEquivalent } from "./utils";
 import { actionList } from "./actions";
+import { canonicalize, canonicalizeEx } from 'json-canonicalize';
+import delay from 'delay';
 
 var net = require("net");
 
@@ -36,15 +38,16 @@ function handleConnection(conn: any): void {
   function onConnData(d: any) {
     console.log("connection data from %s:", remoteAddress, d);
     var data: {[key: string]:any} = {}, segment: string;
-    var segments: string[] = d.split("\n");
+    buffer += d;
+    const segments: string[] = buffer.split("\n");
     console.log(segments);
-    for (let i = 0; i < segments.length; i++) {
+    for (let i = 0; i < segments.length - 1; i++) {
       segment = segments[i];
       try {
         data = JSON.parse(segment);
         console.log("Parsed:", data);
 
-        if (!("type" in data) || !(data.type in actionList)){
+        if (!("type" in data) || !actionList.includes(data.type)){
           throwError("INVALID_FORMAT", segment);
         }
         if (!startedHandshake){
@@ -68,6 +71,7 @@ function handleConnection(conn: any): void {
 
 
     }
+    if (segments.length > 1) buffer = segments[segments.length - 1];
   }
 
   function send(message: Messages.messageType): void {
