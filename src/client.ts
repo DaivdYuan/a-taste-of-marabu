@@ -294,7 +294,7 @@ async function test(): Promise<void> {
     }
 };
 
-test();
+// test();
 
 
 // testing all sorts of mal-formed messages                     SUCCESS

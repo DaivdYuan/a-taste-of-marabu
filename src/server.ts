@@ -82,7 +82,7 @@ function handleConnection(conn: net.Socket): void {
       
       var curAction = data.type;
       try {
-        if (!startedHandshake) {throwError("INVALID_HANDSHAKE", data.json);}
+        if (!startedHandshake && curAction!="hello") {throwError("INVALID_HANDSHAKE", data.json);}
         dispatchAction(curAction, data);  
       } catch (e) {
         throwError("INVALID_FORMAT", segment);
