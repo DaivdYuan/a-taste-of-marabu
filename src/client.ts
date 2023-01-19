@@ -3,8 +3,8 @@ import net from 'net';
 import * as Messages from "./messages";
 import delay from 'delay';
 
-const SERVER_HOST = '149.28.200.131';
-//const SERVER_HOST = '0.0.0.0';
+//const SERVER_HOST = '149.28.200.131';
+const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 // test case for varies mal-formed messages 
