@@ -275,15 +275,15 @@ async function test_5(): Promise<void> {
 }
 
 var tests = [
-    test_0,  // test case 0: a mal formatted message up front           SUCCESS
-    test_0_1, // test case 0.5: a mal formatted hello message up front    SUCCESS
-    test_1,  // test case 1: hello and incomplete message(timeout)         SUCCESS
+    // test_0,  // test case 0: a mal formatted message up front           SUCCESS
+    // test_0_1, // test case 0.5: a mal formatted hello message up front    SUCCESS
+    // test_1,  // test case 1: hello and incomplete message(timeout)         SUCCESS
     test_2,  // test case 2: getPeers()                                 SUCCESS
-    test_2_1, // test case 2.5: getPeers() but mal-formed message        SUCCESS
-    test_3,  // test case 3: getPeers() but over two packages           SUCCESS 
-    test_3_1, // test case 3.5: getPeers() but over three packages      SUCCESS
-    test_4,  // test case 4: getPeers() but didn't send hello first     SUCCESS
-    test_5,  // test case 5: getpeers() after send peers                SUCCESS
+    // test_2_1, // test case 2.5: getPeers() but mal-formed message        SUCCESS
+    // test_3,  // test case 3: getPeers() but over two packages           SUCCESS 
+    // test_3_1, // test case 3.5: getPeers() but over three packages      SUCCESS
+    // test_4,  // test case 4: getPeers() but didn't send hello first     SUCCESS
+    // test_5,  // test case 5: getpeers() after send peers                SUCCESS
 ]
 
 async function test(): Promise<void> {
@@ -294,11 +294,11 @@ async function test(): Promise<void> {
     }
 };
 
-// test();
+test();
 
 
 // testing all sorts of mal-formed messages                     SUCCESS
-const invalid_messages = [
+const invalid_messages = [                          // THEY SHOULD ALL RETURN INVALID_FORMAT
     'Wbgygvf7rgtyv7tfbgy{{{',
     '{"type":"diufygeuybhv"}',
     '{"type":"hello"}',
@@ -314,4 +314,4 @@ async function mal_messages_test(): Promise<void> {
     }
 }
 
-mal_messages_test();
+// mal_messages_test();

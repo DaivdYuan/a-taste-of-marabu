@@ -6,7 +6,7 @@ import { getLocalPeers, addPeers } from "./pipeline"
 import delay from 'delay';
 import * as net from 'net';
 
-const TIME_OUT = 6000;
+const TIME_OUT = 20000;
 const PORT = 18018;
 
 var server = net.createServer();
