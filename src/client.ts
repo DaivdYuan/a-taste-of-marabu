@@ -3,8 +3,8 @@ import net from 'net';
 import * as Messages from "./messages";
 import delay from 'delay';
 
-//const SERVER_HOST = '149.28.200.131';
-const SERVER_HOST = '0.0.0.0';
+const SERVER_HOST = '149.28.200.131';
+// const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 // test case for varies mal-formed messages 
@@ -107,9 +107,9 @@ function test_2(): void {
     client.connect(SERVER_PORT, SERVER_HOST, async () => {
         console.log('Connected to server.');
         client.write(Messages.helloMessage.json + '\n');
-        await delay(10);
+        await delay(3000);
         client.write(Messages.getPeersMessage.json + '\n');
-        await delay(1000);
+        await delay(3000);
         client.destroy();
     });
     client.on('data', (data) => {
