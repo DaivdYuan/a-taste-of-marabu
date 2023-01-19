@@ -66,7 +66,6 @@ function handleConnection(conn: net.Socket): void {
         console.log("\n> Parsed:", data);
 
         if (!("type" in data) || !actionList.includes(data.type)){
-          console.log("4");
           throwError("INVALID_FORMAT", segment);
           return;
         }
@@ -80,7 +79,6 @@ function handleConnection(conn: net.Socket): void {
         }
 
       } catch (e) {
-        console.log("3");
         throwError("INVALID_FORMAT", segment)
         return;
       }
@@ -89,7 +87,6 @@ function handleConnection(conn: net.Socket): void {
       try {
         dispatchAction(curAction, data);  
       } catch (e) {
-        console.log("2");
         throwError("INVALID_FORMAT", segment);
         return;
       }
@@ -120,7 +117,6 @@ function handleConnection(conn: net.Socket): void {
         console.log(Object.keys(msg));
         console.log((matchesValidFields(Messages.ValidKeys["GetPeersMessage"], Object.keys(msg))));
         if (!(matchesValidFields(Messages.ValidKeys["GetPeersMessage"], Object.keys(msg)))){
-          console.log("1");
           throwError("INVALID_FORMAT", msg.json);
           return -1;
         }
