@@ -10,7 +10,7 @@ export function isValidPeer(peer: string[]){
         //separate ports
         try {
             const portions = p.split(":");
-            
+
             const port: number = +portions[portions.length - 1];
             if (!port || (port < 0 || port > 65535)){
                 console.log("Invalid port: " + port);
@@ -39,6 +39,7 @@ export function matchesValidFields(validKeys: string[], fields: string[]){
     try {
         var res:boolean = keys.size === fieldsSet.size && [...keys].every((x) => fieldsSet.has(x));
     } catch (e) {
+        console.log("Error:",e);
         return false;
     }
     return res;
