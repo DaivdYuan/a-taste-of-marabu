@@ -24,6 +24,7 @@ function handleConnection(conn: any): void {
   var buffer: string = "";
   var startedHandshake: boolean = false;
 
+  console.log("------------------------------------");
   console.log("new client connection from %s", remoteAddress);
   conn.setEncoding("utf8");
 
