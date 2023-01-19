@@ -117,7 +117,7 @@ function handleConnection(conn: net.Socket): void {
           throwError("INVALID_FORMAT", msg.json);
           return -1;
         }
-
+        console.log("sending peers data");
         send(new Messages.PeersMessage(getLocalPeers()));
         break;
 
