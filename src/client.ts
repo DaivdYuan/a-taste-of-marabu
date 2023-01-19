@@ -7,7 +7,6 @@ import delay from 'delay';
 const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
-
 // test case for varies mal-formed messages 
 function test_mal_messages(message: string): void {
     const client = new net.Socket();

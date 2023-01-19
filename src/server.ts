@@ -2,13 +2,13 @@ import * as Messages from "./messages";
 import { checkEquivalent } from "./utils";
 import { actionList } from "./actions";
 import { canonicalize, canonicalizeEx } from 'json-canonicalize';
-import { getPeers, addPeers } from "./pipeline"
+import { getLocalPeers, addPeers } from "./pipeline"
 import delay from 'delay';
 import * as net from 'net';
 
-
+const TIME_OUT = 10000;
 const PORT = 18018;
-//const PEERS = ["45.63.84.226", "45.63.89.228", "144.202.122.8"] // check `pipeline.ts`
+
 var server = net.createServer();
 server.on("connection", handleConnection);
 
@@ -21,6 +21,7 @@ server.listen(PORT, function () {
 function handleConnection(conn: net.Socket): void {
 
   function closeConnection() {
+    if (buffer === "") return;
     const err_msg = "Time out. Not receiving remaining package."
     console.log(err_msg);
     conn.write(err_msg + "\n");
@@ -49,7 +50,7 @@ function handleConnection(conn: net.Socket): void {
 
   function onConnData(d: string) {
     console.log("connection data from %s:", remoteAddress);
-    timer_id = setTimeout(closeConnection, 30000);
+    timer_id = setTimeout(closeConnection, TIME_OUT);
     var data: Messages.messageType, segment: string;
     buffer += d;
     const segments: string[] = buffer.split("\n");
@@ -81,16 +82,16 @@ function handleConnection(conn: net.Socket): void {
       
       var curAction = data.type;
       try {
-        dispatchAction(curAction, data);
-        
+        dispatchAction(curAction, data);  
       } catch (e) {
-        
+        throwError("INVALID_FORMAT", segment);
+        return;
       }
 
 
     }
     if (segments.length > 1) buffer = segments[segments.length - 1];
-    timer_id = setTimeout(closeConnection, 30000);
+    timer_id = setTimeout(closeConnection, TIME_OUT);
   }
 
   function send(message: Messages.messageType): void {
@@ -108,11 +109,11 @@ function handleConnection(conn: net.Socket): void {
     console.log("Dispatching action: " + action);
     switch (action) {
       case "getpeers":
-        send(new Messages.PeersMessage(getPeers()));
+        send(new Messages.PeersMessage(getLocalPeers()));
         break;
       case "peers":
         msg = <Messages.PeersMessage> msg;
-        addPeers(getPeers(),msg.peers);
+        addPeers(msg.peers);
         break;
       case "hello":
         throwError("INVALID_HANDSHAKE");
