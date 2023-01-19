@@ -68,7 +68,7 @@ function handleConnection(conn: net.Socket): void {
         }
         if (!startedHandshake){
             if (!checkEquivalent<string>(canonicalize(data), Messages.helloMessage.json)){
-              throwError("INVALID_FORMAT");
+              throwError("INVALID_HANDSHAKE");
               return;
             }
             startedHandshake = true;
@@ -82,7 +82,6 @@ function handleConnection(conn: net.Socket): void {
       
       var curAction = data.type;
       try {
-        if (!startedHandshake && curAction!="hello") {throwError("INVALID_HANDSHAKE", data.json);}
         dispatchAction(curAction, data);  
       } catch (e) {
         throwError("INVALID_FORMAT", segment);
@@ -136,7 +135,9 @@ function handleConnection(conn: net.Socket): void {
         break;
 
       case "hello":
-        throwError("INVALID_HANDSHAKE", msg.json);
+        if (!checkEquivalent<string>(canonicalize(msg), Messages.helloMessage.json)){
+          throwError("INVALID_FORMAT", msg.json);
+        }
         return -1;
 
       case "error":
