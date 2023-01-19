@@ -112,6 +112,7 @@ function handleConnection(conn: net.Socket): void {
       case "getpeers":
         console.log(Messages.ValidKeys["GetPeersMessage"]);
         console.log(Object.keys(msg));
+        console.log((matchesValidFields(Messages.ValidKeys["GetPeersMessage"], Object.keys(msg))));
         if (!(matchesValidFields(Messages.ValidKeys["GetPeersMessage"], Object.keys(msg)))){
           throwError("INVALID_FORMAT", msg.json);
           return -1;
