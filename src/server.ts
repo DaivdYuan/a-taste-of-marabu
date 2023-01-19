@@ -42,6 +42,9 @@ function handleConnection(conn: net.Socket): void {
   conn.on("data", onConnData);
   conn.once("close", onConnClose);
   conn.on("error", onConnError);
+  conn.on('uncaughtException', function (err) {
+    console.log(err);
+}); 
 
   function initializeConnection(conn: any) {
     send(Messages.helloMessage);
