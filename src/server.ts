@@ -2,9 +2,10 @@ import * as Messages from "./messages";
 import { checkEquivalent } from "./utils";
 import { actionList } from "./actions";
 import { canonicalize, canonicalizeEx } from 'json-canonicalize';
+import { getPeers, addPeers } from "./pipeline"
 import delay from 'delay';
+import * as net from 'net';
 
-var net = require("net");
 
 const PORT = 18018;
 //const PEERS = ["45.63.84.226", "45.63.89.228", "144.202.122.8"] // check `pipeline.ts`
@@ -17,7 +18,7 @@ server.listen(PORT, function () {
   console.log("server listening to %j", server.address());
 });
 
-function handleConnection(conn: any): void {
+function handleConnection(conn: net.Socket): void {
 
   function closeConnection() {
     const err_msg = "Time out. Not receiving remaining package."
@@ -46,19 +47,18 @@ function handleConnection(conn: any): void {
     send(Messages.getPeersMessage);
   }
 
-  function onConnData(d: any) {
+  function onConnData(d: string) {
     console.log("connection data from %s:", remoteAddress);
     timer_id = setTimeout(closeConnection, 30000);
-    var data: {[key: string]: any} = {}, segment: string;
+    var data: Messages.messageType, segment: string;
     buffer += d;
     const segments: string[] = buffer.split("\n");
     console.log(segments);
     for (let i = 0; i < segments.length - 1; i++) {
       clearTimeout(timer_id);
       segment = segments[i];
-      data = {};
       try {
-        data = JSON.parse(segment);
+        data = <Messages.messageType>JSON.parse(segment);
         console.log("\n> Parsed:", data);
 
         if (!("type" in data) || !actionList.includes(data.type)){
@@ -81,7 +81,7 @@ function handleConnection(conn: any): void {
       
       var curAction = data.type;
       try {
-        dispatchAction(curAction);
+        dispatchAction(curAction, data);
         
       } catch (e) {
         
@@ -104,14 +104,15 @@ function handleConnection(conn: any): void {
     conn.destroy();
   }
 
-  function dispatchAction(action: string): number {
+  function dispatchAction(action: string, msg: Messages.messageType): number {
     console.log("Dispatching action: " + action);
     switch (action) {
-      case "get_peers":
-        //TODO
+      case "getpeers":
+        send(new Messages.PeersMessage(getPeers()));
         break;
       case "peers":
-        //TODO
+        msg = <Messages.PeersMessage> msg;
+        addPeers(getPeers(),msg.peers);
         break;
       case "hello":
         throwError("INVALID_HANDSHAKE");

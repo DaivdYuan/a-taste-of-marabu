@@ -1,6 +1,6 @@
 import { canonicalize, canonicalizeEx } from 'json-canonicalize';
 
-export type messageType = HelloMessage | GetPeersMessage | ErrorMessage;
+export type messageType = HelloMessage | GetPeersMessage | PeersMessage | ErrorMessage;
 
 interface MessageTemplate{
     readonly type: string;
@@ -28,9 +28,15 @@ export const getPeersMessage = new GetPeersMessage();
 export class PeersMessage implements MessageTemplate{
     readonly type = "peers";
     readonly peers: string[] = [];
+
+    constructor (peers:string[]){
+        this.peers = peers;
+    }
+
     get json(): string{
         return canonicalize(this);
     }
+
 }
 
 class ErrorMessage implements MessageTemplate{
