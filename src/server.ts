@@ -7,8 +7,7 @@ import delay from 'delay';
 var net = require("net");
 
 const PORT = 18018;
-const PEERS = ["45.63.84.226", "45.63.89.228", "144.202.122.8"]
-
+//const PEERS = ["45.63.84.226", "45.63.89.228", "144.202.122.8"] // check `pipeline.ts`
 var server = net.createServer();
 server.on("connection", handleConnection);
 
@@ -50,26 +49,28 @@ function handleConnection(conn: any): void {
   function onConnData(d: any) {
     console.log("connection data from %s:", remoteAddress, d);
     timer_id = setTimeout(closeConnection, 30000);
-    var data: {[key: string]:any} = {}, segment: string;
+    var data: {[key: string]: any} = {}, segment: string;
     buffer += d;
     const segments: string[] = buffer.split("\n");
     console.log(segments);
     for (let i = 0; i < segments.length - 1; i++) {
       clearTimeout(timer_id);
       segment = segments[i];
+      data = {};
       try {
         data = JSON.parse(segment);
         console.log("Parsed:", data);
 
-      if (!("type" in data) || !actionList.includes(data.type)){
-        throwError("INVALID_FORMAT", segment);
-      }
-      if (!startedHandshake){
-          if (!checkEquivalent<string>(JSON.stringify(data), Messages.helloMessage.json)){
-          throwError("INVALID_HANDSHAKE")
-          }
-          startedHandshake = true;
-      }
+        if (!("type" in data) || !actionList.includes(data.type)){
+          throwError("INVALID_FORMAT", segment);
+        }
+        if (!startedHandshake){
+            if (!checkEquivalent<string>(canonicalize(data), Messages.helloMessage.json)){
+              throwError("INVALID_HANDSHAKE");
+            }
+            startedHandshake = true;
+            continue;
+        }
 
       } catch (e) {
         throwError("INVALID_FORMAT", segment)
@@ -101,6 +102,7 @@ function handleConnection(conn: any): void {
   }
 
   function dispatchAction(action: string): number {
+    console.log("Dispatching action: " + action);
     //TODO
     return 0;
   }
