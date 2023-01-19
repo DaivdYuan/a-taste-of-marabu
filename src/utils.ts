@@ -9,13 +9,21 @@ export function isValidPeer(peer: string[]){
     for (const p of peer){
         //separate ports
         try {
-            const port: number = +p.split(":")[1];
+            const portions = p.split(":");
+            
+            const port: number = +portions[portions.length - 1];
             if (!port || (port < 0 || port > 65535)){
+                console.log("Invalid port: " + port);
                 return false;
             }
-            //separate ip and domain
-            const ip: string = p.split(":")[0];
-            if (!ip || (!isIP(ip) || !isValidDomain(ip))){
+
+            var ip: string = portions.slice(0, portions.length - 1).join(":");
+            //stripe brackets
+            if (ip[0] === '[' && ip[ip.length - 1] === ']'){
+                ip = ip.slice(1, ip.length - 1);
+            }
+            if (!ip || (!isIP(ip) && !isValidDomain(ip))){
+                console.log("Invalid ip: " + ip);
                 return false;
             }
         } catch (e) {
@@ -26,15 +34,12 @@ export function isValidPeer(peer: string[]){
 }
 
 export function matchesValidFields(validKeys: string[], fields: string[]){
-    for (const field of fields){
-        if (!(field in validKeys)){
-            return false;
-        }
+    const keys = new Set(validKeys);
+    const fieldsSet = new Set(fields);
+    try {
+        var res:boolean = keys.size === fieldsSet.size && [...keys].every((x) => fieldsSet.has(x));
+    } catch (e) {
+        return false;
     }
-    for (const key of validKeys){
-        if (!(key in fields)){
-            return false;
-        }
-    }
-    return true;
+    return res;
 }

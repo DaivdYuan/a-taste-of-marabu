@@ -57,7 +57,8 @@ function test_0_1(): void {
     const mal_hello_message = {
         "type": "hello",
         "version": "0.9",
-        "agent": "Marabu-Core Client 0.9"
+        "agent": "Marabu-Core Client 0.9",
+        "port": 18018
     }
     console.log("--------------------------------");
     console.log("test case 0.5: a mal formatted hello message up front");
@@ -120,6 +121,34 @@ function test_2(): void {
     })
 }
 
+// test case 2.t: getPeers() but invalid message   
+function test_2_1(): void {
+    const client = new net.Socket();
+    const mal_getPeers_message = {
+        "type": "getpeers",
+        "version": "0.9",
+        "agent": "Marabu-Core Client 0.9"
+    }
+    console.log("--------------------------------");
+    console.log("test case 2: getPeers()")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(10);
+        client.write(canonicalize(mal_getPeers_message) + '\n');
+        await delay(1000);
+        client.destroy();
+    });
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+    })
+    
+    client.on('close', () => {
+        console.log('Server disconnected');
+    })
+}
+
+
 // test case 3: getPeers() but over two packages
 function test_3(): void {
     const client = new net.Socket();
@@ -131,6 +160,31 @@ function test_3(): void {
         client.write('{"type":"ge');
         await delay(100);
         client.write('tpeers"}\n');
+        await delay(1000);
+        client.destroy();
+    });
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+    })
+    
+    client.on('close', () => {
+        console.log('Server disconnected');
+    })
+}
+
+// test case 3.5: getPeers() but over three packages
+function test_3_1(): void {
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test case 3: getPeers() but over two packages")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        client.write('{"type":"ge');
+        await delay(100);
+        client.write('tpe');
+        await delay(100);
+        client.write('ers"}\n');
         await delay(1000);
         client.destroy();
     });
@@ -224,10 +278,12 @@ var tests = [
     test_0,  // test case 0: a mal formatted message up front           SUCCESS
     test_0_1, // test case 0.5: a mal formatted hello message up front    SUCCESS
     test_1,  // test case 1: hello and incomplete message(timeout)         SUCCESS
-    test_2,  // test case 2: getPeers()                                 FAILED (not implemented)
-    test_3,  // test case 3: getPeers() but over two packages           SUCCESS (putting together), FAILED (not implemented)
+    test_2,  // test case 2: getPeers()                                 SUCCESS
+    test_2_1, // test case 2.5: getPeers() but mal-formed message        SUCCESS
+    test_3,  // test case 3: getPeers() but over two packages           SUCCESS 
+    test_3_1, // test case 3.5: getPeers() but over three packages      SUCCESS
     test_4,  // test case 4: getPeers() but didn't send hello first     SUCCESS
-    test_5,  // test case 5: getpeers() after send peers                FAILED (not implemented)
+    test_5,  // test case 5: getpeers() after send peers                SUCCESS
 ]
 
 async function test(): Promise<void> {
@@ -238,7 +294,7 @@ async function test(): Promise<void> {
     }
 };
 
-//test();
+test();
 
 
 // testing all sorts of mal-formed messages                     SUCCESS
