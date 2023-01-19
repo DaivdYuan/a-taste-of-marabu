@@ -20,9 +20,17 @@ server.listen(PORT, function () {
 
 function handleConnection(conn: any): void {
 
+  function closeConnection() {
+    const err_msg = "Time out. Not receiving remaining package."
+    console.log(err_msg);
+    conn.write(err_msg + "\n");
+    conn.destroy();
+  }
+
   var remoteAddress = conn.remoteAddress + ":" + conn.remotePort;
   var buffer: string = "";
   var startedHandshake: boolean = false;
+  var timer_id;
 
   console.log("------------------------------------");
   console.log("new client connection from %s", remoteAddress);
@@ -41,11 +49,13 @@ function handleConnection(conn: any): void {
 
   function onConnData(d: any) {
     console.log("connection data from %s:", remoteAddress, d);
+    timer_id = setTimeout(closeConnection, 30000);
     var data: {[key: string]:any} = {}, segment: string;
     buffer += d;
     const segments: string[] = buffer.split("\n");
     console.log(segments);
     for (let i = 0; i < segments.length - 1; i++) {
+      clearTimeout(timer_id);
       segment = segments[i];
       try {
         data = JSON.parse(segment);
@@ -76,6 +86,7 @@ function handleConnection(conn: any): void {
 
     }
     if (segments.length > 1) buffer = segments[segments.length - 1];
+    timer_id = setTimeout(closeConnection, 30000);
   }
 
   function send(message: Messages.messageType): void {

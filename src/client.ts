@@ -2,8 +2,8 @@ import net from 'net';
 import * as Messages from "./messages";
 import delay from 'delay';
 
-const SERVER_HOST = '149.28.200.131';
-// const SERVER_HOST = '0.0.0.0';
+// const SERVER_HOST = '149.28.200.131';
+const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 
@@ -51,16 +51,16 @@ function test_0(): void {
     })
 }
 
-// test case 1: hello and then mal formatted message
+// test case 1: hello and incomplete message(timeout) 
 function test_1(): void {
     const client = new net.Socket();
     console.log("--------------------------------");
-    console.log("test case 1: hello and then mal formatted message");
+    console.log("test case 1: hello and incomplete message(timeout)");
     client.connect(SERVER_PORT, SERVER_HOST, async () => {
         console.log('Connected to server.');
         client.write(Messages.helloMessage.json + '\n');
-        client.write('TEST_1: this is some random message.\n');
-        await delay(1000);
+        client.write('TEST_1: this is some time out message');
+        await delay(50000);
         client.destroy();
     });
     client.on('data', (data) => {
@@ -190,12 +190,12 @@ async function test_5(): Promise<void> {
 }
 
 var tests = [
-    test_0,  // test case 0: a mal formatted messgae up front           FAIl
-    test_1,  // test case 1: hello and then mal formatted message       FAIl
-    test_2,  // test case 2: getPeers()                                 SUCCESS
-    test_3,  // test case 3: getPeers() but over two packages           SUCCESS
-    test_4,  // test case 4: getPeers() but didn't send hello first     FAIL
-    test_5,  // test case 5: getpeers() after send peers                SUCCESS
+    // test_0,  // test case 0: a mal formatted messgae up front           FAIl
+    test_1,  // test case 1: hello and incomplete message(timeout)         FAIl
+    // test_2,  // test case 2: getPeers()                                 SUCCESS
+    // test_3,  // test case 3: getPeers() but over two packages           SUCCESS
+    // test_4,  // test case 4: getPeers() but didn't send hello first     FAIL
+    // test_5,  // test case 5: getpeers() after send peers                SUCCESS
 ]
 
 async function test(): Promise<void> {
@@ -218,7 +218,12 @@ const invalid_messages = [
     '{"type":"hello","version":"5.8.2"}'
 ]
 
-for (const invalid_message of invalid_messages) {
-    console.log(invalid_message);
-    test_mal_messages(invalid_message);
+async function mal_messages_test(): Promise<void> {
+    for (const invalid_message of invalid_messages) {
+        console.log(invalid_message);
+        test_mal_messages(invalid_message);
+        await delay(5000);
+    }
 }
+
+// mal_messages_test();
