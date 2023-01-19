@@ -235,10 +235,10 @@ async function test_5(): Promise<void> {
     client.connect(SERVER_PORT, SERVER_HOST, async () => {
         console.log('Connected to server.');
         client.write(Messages.helloMessage.json + '\n');
-        await delay(10);
-        client.write(peers_msg + '\n');
-        await delay(10);
+        await delay(100);
         client.write(Messages.getPeersMessage.json + '\n');
+        await delay(100);
+        client.write(peers_msg + '\n');
         await delay(1000);
         client.destroy();
     });
@@ -278,12 +278,12 @@ var tests = [
     // test_0,  // test case 0: a mal formatted message up front           SUCCESS
     // test_0_1, // test case 0.5: a mal formatted hello message up front    SUCCESS
     // test_1,  // test case 1: hello and incomplete message(timeout)         SUCCESS
-    test_2,  // test case 2: getPeers()                                 SUCCESS
+    // test_2,  // test case 2: getPeers()                                 SUCCESS
     // test_2_1, // test case 2.5: getPeers() but mal-formed message        SUCCESS
     // test_3,  // test case 3: getPeers() but over two packages           SUCCESS 
     // test_3_1, // test case 3.5: getPeers() but over three packages      SUCCESS
     // test_4,  // test case 4: getPeers() but didn't send hello first     SUCCESS
-    // test_5,  // test case 5: getpeers() after send peers                SUCCESS
+    test_5,  // test case 5: getpeers() after send peers                SUCCESS
 ]
 
 async function test(): Promise<void> {
