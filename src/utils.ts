@@ -24,3 +24,17 @@ export function isValidPeer(peer: string[]){
     }
     return true;
 }
+
+export function matchesValidFields(validKeys: string[], fields: string[]){
+    for (const field of fields){
+        if (!(field in validKeys)){
+            return false;
+        }
+    }
+    for (const key of validKeys){
+        if (!(key in fields)){
+            return false;
+        }
+    }
+    return true;
+}

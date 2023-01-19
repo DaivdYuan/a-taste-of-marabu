@@ -1,7 +1,7 @@
 import * as Messages from "./messages";
-import { checkEquivalent } from "./utils";
+import { checkEquivalent, isValidPeer, matchesValidFields } from "./utils";
 import { actionList } from "./actions";
-import { canonicalize, canonicalizeEx } from 'json-canonicalize';
+import { canonicalize } from 'json-canonicalize';
 import { getLocalPeers, addPeers } from "./pipeline"
 import delay from 'delay';
 import * as net from 'net';
@@ -108,16 +108,36 @@ function handleConnection(conn: net.Socket): void {
   function dispatchAction(action: string, msg: Messages.messageType): number {
     console.log("Dispatching action: " + action);
     switch (action) {
+      
       case "getpeers":
+
+        if (!(matchesValidFields(Messages.GetPeersMessage.validKeys, Object.keys(msg)))){
+          throwError("INVALID_FORMAT", msg.json);
+          return -1;
+        }
+
         send(new Messages.PeersMessage(getLocalPeers()));
         break;
+
       case "peers":
+
+        if (!(matchesValidFields(Messages.PeersMessage.validKeys, Object.keys(msg)))){
+          throwError("INVALID_FORMAT", msg.json);
+          return -1;
+        }
+
         msg = <Messages.PeersMessage> msg;
+        if (!("peers" in msg) || !isValidPeer(msg.peers)) {
+          throwError("INVALID_FORMAT", msg.json);
+          return -1;
+        }
         addPeers(msg.peers);
         break;
+
       case "hello":
-        throwError("INVALID_HANDSHAKE");
+        throwError("INVALID_HANDSHAKE", msg.json);
         return -1;
+
       case "error":
         closeConnection();
         return -1;
