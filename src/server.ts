@@ -6,7 +6,7 @@ import { getLocalPeers, addPeers } from "./pipeline"
 import delay from 'delay';
 import * as net from 'net';
 
-const TIME_OUT = 10000;
+const TIME_OUT = 6000;
 const PORT = 18018;
 
 var server = net.createServer();
@@ -24,7 +24,7 @@ function handleConnection(conn: net.Socket): void {
     if (buffer === "") return;
     const err_msg = "Time out. Not receiving remaining package."
     console.log(err_msg);
-    conn.write(err_msg + "\n");
+    throwError("INVALID_FORMAT", err_msg);
     conn.destroy();
   }
 
@@ -54,7 +54,7 @@ function handleConnection(conn: net.Socket): void {
     var data: Messages.messageType, segment: string;
     buffer += d;
     const segments: string[] = buffer.split("\n");
-    console.log(segments);
+    console.log("\n-------- New Message --------\n", segments);
     for (let i = 0; i < segments.length - 1; i++) {
       clearTimeout(timer_id);
       segment = segments[i];
@@ -109,10 +109,10 @@ function handleConnection(conn: net.Socket): void {
   function dispatchAction(action: string, msg: Messages.messageType): number {
     console.log("Dispatching action: " + action);
     switch (action) {
-      
+
       case "getpeers":
 
-        if (!(matchesValidFields(Messages.GetPeersMessage.validKeys, Object.keys(msg)))){
+        if (!(matchesValidFields(Messages.ValidKeys["GetPeersMessage"], Object.keys(msg)))){
           throwError("INVALID_FORMAT", msg.json);
           return -1;
         }
@@ -122,7 +122,7 @@ function handleConnection(conn: net.Socket): void {
 
       case "peers":
 
-        if (!(matchesValidFields(Messages.PeersMessage.validKeys, Object.keys(msg)))){
+        if (!(matchesValidFields(Messages.ValidKeys["PeersMessage"], Object.keys(msg)))){
           throwError("INVALID_FORMAT", msg.json);
           return -1;
         }
@@ -147,7 +147,7 @@ function handleConnection(conn: net.Socket): void {
   }
 
   function onConnClose() {
-    console.log("connection from %s closed", remoteAddress);
+    console.log("\nconnection from %s closed\n\n", remoteAddress);
     clearTimeout(timer_id);
   }
 

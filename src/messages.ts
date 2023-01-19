@@ -2,6 +2,13 @@ import { canonicalize, canonicalizeEx } from 'json-canonicalize';
 
 export type messageType = HelloMessage | GetPeersMessage | PeersMessage | ErrorMessage;
 
+export const ValidKeys = {
+    "HelloMessage":["type","version","agent"],
+    "GetPeersMessage":["type"],
+    "PeersMessage":["type","peers"],
+    "ErrorMessage":["type","name","message"]
+}
+
 export interface MessageTemplate{
     readonly type: string;
     get json(): string; 
@@ -10,8 +17,7 @@ export interface MessageTemplate{
 class HelloMessage implements MessageTemplate{
     readonly type = "hello";
     readonly version: string = "0.9.0";
-    static readonly agent: string = "Marabu-Core Client 0.9";
-    readonly validKeys: string[] = ["type", "version", "agent"];
+    readonly agent: string = "Marabu-Core Client 0.9";
     get json(): string{
         return canonicalize(this);
     };
@@ -30,7 +36,6 @@ export const getPeersMessage = new GetPeersMessage();
 export class PeersMessage implements MessageTemplate{
     readonly type = "peers";
     readonly peers: string[] = [];
-    static readonly validKeys: string[] = ["type", "peers"];
     constructor (peers:string[]){
         this.peers = peers;
     }
@@ -45,7 +50,6 @@ class ErrorMessage implements MessageTemplate{
     readonly type = "error";
     readonly name: string;
     readonly message: string;
-    static readonly validKeys: string[] = ["type", "name", "message"];
     constructor (name: string, message:string){
         this.name = name;
         this.message = message;
