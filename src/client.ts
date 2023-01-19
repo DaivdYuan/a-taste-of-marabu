@@ -3,8 +3,8 @@ import net from 'net';
 import * as Messages from "./messages";
 import delay from 'delay';
 
-const SERVER_HOST = '149.28.200.131';
-//const SERVER_HOST = '0.0.0.0';
+//const SERVER_HOST = '149.28.200.131';
+const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 
@@ -239,10 +239,10 @@ async function test(): Promise<void> {
     }
 };
 
-test();
+//test();
 
 
-// testing all sorts of mal-formed messages                             FAIL
+// testing all sorts of mal-formed messages                     SUCCESS
 const invalid_messages = [
     'Wbgygvf7rgtyv7tfbgy{{{',
     '{"type":"diufygeuybhv"}',
@@ -259,4 +259,4 @@ async function mal_messages_test(): Promise<void> {
     }
 }
 
-// mal_messages_test();
+mal_messages_test();

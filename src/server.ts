@@ -29,10 +29,10 @@ function handleConnection(conn: any): void {
   var remoteAddress = conn.remoteAddress + ":" + conn.remotePort;
   var buffer: string = "";
   var startedHandshake: boolean = false;
-  var timer_id;
+  var timer_id: any;
 
   console.log("------------------------------------");
-  console.log("new client connection from %s", remoteAddress);
+  console.log("new client connection from %s\n", remoteAddress);
   conn.setEncoding("utf8");
 
   initializeConnection(conn);
@@ -47,7 +47,7 @@ function handleConnection(conn: any): void {
   }
 
   function onConnData(d: any) {
-    console.log("connection data from %s:", remoteAddress, d);
+    console.log("connection data from %s:", remoteAddress);
     timer_id = setTimeout(closeConnection, 30000);
     var data: {[key: string]: any} = {}, segment: string;
     buffer += d;
@@ -59,14 +59,16 @@ function handleConnection(conn: any): void {
       data = {};
       try {
         data = JSON.parse(segment);
-        console.log("Parsed:", data);
+        console.log("\n> Parsed:", data);
 
         if (!("type" in data) || !actionList.includes(data.type)){
           throwError("INVALID_FORMAT", segment);
+          return;
         }
         if (!startedHandshake){
             if (!checkEquivalent<string>(canonicalize(data), Messages.helloMessage.json)){
               throwError("INVALID_HANDSHAKE");
+              return;
             }
             startedHandshake = true;
             continue;
@@ -74,6 +76,7 @@ function handleConnection(conn: any): void {
 
       } catch (e) {
         throwError("INVALID_FORMAT", segment)
+        return;
       }
       
       var curAction = data.type;
@@ -103,12 +106,26 @@ function handleConnection(conn: any): void {
 
   function dispatchAction(action: string): number {
     console.log("Dispatching action: " + action);
-    //TODO
+    switch (action) {
+      case "get_peers":
+        //TODO
+        break;
+      case "peers":
+        //TODO
+        break;
+      case "hello":
+        throwError("INVALID_HANDSHAKE");
+        return -1;
+      case "error":
+        closeConnection();
+        return -1;
+    }
     return 0;
   }
 
   function onConnClose() {
     console.log("connection from %s closed", remoteAddress);
+    clearTimeout(timer_id);
   }
 
   function onConnError(err: any) {
