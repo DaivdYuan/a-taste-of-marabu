@@ -70,8 +70,12 @@ function handleConnection(conn: net.Socket): void {
           return;
         }
         if (!startedHandshake){
-            if (!checkEquivalent<string>(canonicalize(data), Messages.helloMessage.json)){
+            if (data.type !== "hello"){
               throwError("INVALID_HANDSHAKE");
+              return;
+            }
+            if (!Messages.HelloMessage.isValidHello(<Messages.HelloMessage>data)){
+              throwError("INVALID_FORMAT", segment);
               return;
             }
             startedHandshake = true;
@@ -126,7 +130,6 @@ function handleConnection(conn: net.Socket): void {
           throwError("INVALID_FORMAT", msg.json);
           return -1;
         }
-
         msg = <Messages.PeersMessage> msg;
         if (!("peers" in msg) || !isValidPeer(msg.peers)) {
           throwError("INVALID_FORMAT", msg.json);
@@ -136,10 +139,9 @@ function handleConnection(conn: net.Socket): void {
         break;
 
       case "hello":
-        if (!checkEquivalent<string>(canonicalize(msg), Messages.helloMessage.json)){
-          throwError("INVALID_FORMAT", msg.json);
-        }
-        return -1;
+        // should not receive hello message after handshake
+        // throwError("INVALID_FORMAT", msg.json);
+        return 0;
 
       case "error":
         closeConnection();

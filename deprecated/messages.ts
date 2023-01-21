@@ -14,13 +14,22 @@ export interface MessageTemplate{
     get json(): string; 
 }
 
-class HelloMessage implements MessageTemplate{
+export class HelloMessage implements MessageTemplate{
     readonly type = "hello";
     readonly version: string = "0.9.0";
     readonly agent: string = "Marabu-Core Client 0.9";
     get json(): string{
         return canonicalize(this);
     };
+
+    static isValidHello(msg: HelloMessage): boolean{
+        var keys = Object.keys(msg);
+        if (keys.length !== 3) return false;
+        if (!(keys.includes("type") && keys.includes("version") && keys.includes("agent"))) return false;
+        if (msg.type !== "hello") return false;
+        if (msg.version !== "0.9.0") return false;
+        return true;
+    }
 }
 export const helloMessage = new HelloMessage();
 
