@@ -156,15 +156,15 @@ export class Peer {
   async onMessageObject(msg: ObjectMessageType) {
     // TODO: Validate object
     ChainObject.match(
-      async () => {
+      () => {
         this.info(`Peer sent GENESIS BLOCK`)
         //validate block
       },
-      async () => {
+      () => {
         this.info(`Peer sent BLOCK object`)
         //validate block
       },
-      async () => {
+      () => {
         this.info(`Peer sent TRANSACTION object`)
         //validate transaction
       }
