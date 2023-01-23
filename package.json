@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/node": "^17.0.23",
     "@types/semver": "^7.3.9",
+    "delay": "^5.0.0",
     "is-valid-hostname": "^1.0.2",
     "json-canonicalize": "^1.0.4",
     "level-ts": "^2.1.0",
