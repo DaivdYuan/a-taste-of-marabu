@@ -2,9 +2,12 @@ import { logger } from './logger'
 import { MessageSocket } from './network'
 import semver from 'semver'
 import { Messages,
-         Message, HelloMessage, PeersMessage, GetPeersMessage, ErrorMessage,
-         MessageType, HelloMessageType, PeersMessageType, GetPeersMessageType, ErrorMessageType, AnnotatedError } from './message'
+         Message, HelloMessage, PeersMessage, GetPeersMessage, ErrorMessage, GetObjectMessage, IHaveObjectMessage, ObjectMessage,
+         MessageType, HelloMessageType, PeersMessageType, GetPeersMessageType, ErrorMessageType, GetObjectMessageType, IHaveObjectMessageType, ObjectMessageType,
+         AnnotatedError 
+        } from './message'
 import { peerManager } from './peermanager'
+import { objectManager, ObjectManager } from './objectmanager'
 import { canonicalize } from 'json-canonicalize'
 
 const VERSION = '0.9.0'
@@ -39,6 +42,24 @@ export class Peer {
     } catch (error) {
       this.sendMessage(new AnnotatedError('INTERNAL_ERROR', `Failed to serialize error message: ${error}`).getJSON())
     }
+  }
+  async sendGetObject(objectid: string) {
+    this.sendMessage({
+      type: 'getobject',
+      objectid: objectid
+    })
+  }
+  async sendIHaveObject(objectid: string) {
+    this.sendMessage({
+      type: 'ihaveobject',
+      objectid: objectid
+    })
+  }
+  async sendObject(objectid: string) {
+    this.sendMessage({
+      type: 'object',
+      object: objectManager.getObject(objectid),
+    })
   }
   sendMessage(obj: object) {
     const message: string = canonicalize(obj)
@@ -81,13 +102,17 @@ export class Peer {
       }
       return await this.fatalError(new AnnotatedError('INVALID_HANDSHAKE', `Received message ${message} prior to "hello"`))
     }
+
     Message.match(
       async () => {
         return await this.fatalError(new AnnotatedError('INVALID_HANDSHAKE', `Received a second "hello" message, even though handshake is completed`))
       },
       this.onMessageGetPeers.bind(this),
       this.onMessagePeers.bind(this),
-      this.onMessageError.bind(this)
+      this.onMessageError.bind(this),
+      this.onMessageGetObject.bind(this),
+      this.onMessageIHaveObject.bind(this),
+      this.onMessageObject.bind(this),
     )(msg)
   }
   async onMessageHello(msg: HelloMessageType) {
@@ -110,6 +135,34 @@ export class Peer {
   }
   async onMessageError(msg: ErrorMessageType) {
     this.warn(`Peer reported error: ${msg.name}`)
+  }
+  async onMessageGetObject(msg: GetObjectMessageType) {
+    this.info(`Peer requested object ${msg.objectid}`)
+    if (objectManager.haveObjectID(msg.objectid)) {
+      this.info(`We have object ${msg.objectid}. Sending.`)
+      await this.sendObject(msg.objectid)
+    } else {
+      this.info(`We do not have object ${msg.objectid}.`)
+      return await this.fatalError(new AnnotatedError('UNFINDABLE_OBJECT', `Peer requested object ${msg.objectid} which we do not have`))
+    }
+  }
+  async onMessageIHaveObject(msg: IHaveObjectMessageType) {
+    this.info(`Peer reported knowledge of object ${msg.objectid}`)
+    if (!objectManager.haveObjectID(msg.objectid)) {
+      this.info(`We do not have object ${msg.objectid}. Requesting.`)
+      await this.sendGetObject(msg.objectid)
+    }
+  }
+  async onMessageObject(msg: ObjectMessageType) {
+    let objectString = canonicalize(msg.object)
+    let objectid = ObjectManager.hashObject(objectString)
+    this.info(`Peer sent object ${objectid}`)
+    if (objectManager.haveObjectID(objectid)) {
+      this.info(`We already have object ${objectid}. Ignoring.`)
+      return
+    }
+    this.info(`We do not have object ${objectid}. Storing.`)
+    await objectManager.storeObject(objectString, objectid)
   }
   log(level: string, message: string) {
     logger.log(level, `[peer ${this.socket.peerAddr}:${this.socket.netSocket.remotePort}] ${message}`)
