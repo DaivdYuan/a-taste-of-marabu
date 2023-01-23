@@ -97,9 +97,10 @@ export const GenesisBlock = Record({
 })
 export type GenesisBlockType = Static<typeof GenesisBlock>
 
+export const ChainObject = Union(GenesisBlock, Block, Transaction)
 export const ObjectMessage = Record({
   type: Literal('object'),
-  object: Union(Block, Transaction, GenesisBlock)
+  object: ChainObject
 })
 export type ObjectMessageType = Static<typeof ObjectMessage>
 

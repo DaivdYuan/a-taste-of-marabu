@@ -1,7 +1,7 @@
 import { logger } from './logger'
 import { MessageSocket } from './network'
 import semver from 'semver'
-import { Messages,
+import { Messages, ChainObject,
          Message, HelloMessage, PeersMessage, GetPeersMessage, ErrorMessage, GetObjectMessage, IHaveObjectMessage, ObjectMessage,
          MessageType, HelloMessageType, PeersMessageType, GetPeersMessageType, ErrorMessageType, GetObjectMessageType, IHaveObjectMessageType, ObjectMessageType,
          AnnotatedError 
@@ -154,6 +154,22 @@ export class Peer {
     }
   }
   async onMessageObject(msg: ObjectMessageType) {
+    // TODO: Validate object
+    ChainObject.match(
+      async () => {
+        this.info(`Peer sent GENESIS BLOCK`)
+        //validate block
+      },
+      async () => {
+        this.info(`Peer sent BLOCK object`)
+        //validate block
+      },
+      async () => {
+        this.info(`Peer sent TRANSACTION object`)
+        //validate transaction
+      }
+    )(msg.object)
+
     let objectString = canonicalize(msg.object)
     let objectid = ObjectManager.hashObject(objectString)
     this.info(`Peer sent object ${objectid}`)
