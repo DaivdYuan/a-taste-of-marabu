@@ -71,10 +71,10 @@ export const Transaction = Record({
 export type TransactionType = Static<typeof Transaction>
 
 export const Block = Record({
-  object: Literal('block'), 
+  type: Literal('block'), 
   txids: Array(String),
   nonce: String.withConstraint(x => x.length === 64),
-  previd: String.withConstraint(x => x.length === 64),
+  previd: Union(String.withConstraint(x => x.length === 64),Null),
   created: Number,
   T: String.withConstraint(x => x.length === 64),
 }).And(Partial({
