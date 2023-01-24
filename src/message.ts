@@ -56,18 +56,23 @@ export type IHaveObjectMessageType = Static<typeof IHaveObjectMessage>
 
 export const Transaction = Record({
   type: Literal('transaction'),
-  inputs: Array(Record({
-    outpoint: Record({
-      txid: String.withConstraint(x => x.length === 64),
-      index: Number
-    }),
-    sig: Union(String, Null)
-  })),
   outputs: Array(Record({
     pubkey: String.withConstraint(x => x.length === 64),
     value: BigInt
   }))
-})
+}).And(Record({
+    inputs: Array(Record({
+      outpoint: Record({
+        txid: String.withConstraint(x => x.length === 64),
+        index: Number
+    }),
+    sig: Union(String, Null)
+    })),
+  }).Or(Record({
+      height: Number,
+  }))
+) // for And
+
 export type TransactionType = Static<typeof Transaction>
 
 export const Block = Record({
@@ -91,6 +96,7 @@ export const ObjectMessage = Record({
   type: Literal('object'),
   object: ChainObject
 })
+export type ChainObjectType = Static<typeof ChainObject>
 export type ObjectMessageType = Static<typeof ObjectMessage>
 
 ////////////////////////////////////////////////////////
