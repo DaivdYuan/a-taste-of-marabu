@@ -1,14 +1,15 @@
 
 import { db } from './store'
 import { logger } from './logger'
-import * as blake2 from 'blake2'
 import { canonicalize } from 'json-canonicalize'
+
+var blake2 = require('blake2');
 
 export class ObjectManager{
 
     static hashObject(object: any): string {
         let buff = Buffer.from(canonicalize(object))
-        var h = blake2.createHash('blake2b', {digestLength: 64})
+        var h = blake2.createHash('blake2s', {digestLength: 32})
         return h.update(buff).digest('hex')
     }
 
