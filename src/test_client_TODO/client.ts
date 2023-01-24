@@ -2,9 +2,11 @@ import { canonicalize } from 'json-canonicalize';
 import net from 'net';
 import * as Messages from "./messages";
 import delay from 'delay';
+import * as Messages_solution from "../message"
+import { logger } from '../logger';
 
-const SERVER_HOST = '149.28.200.131';
-//const SERVER_HOST = '0.0.0.0';
+// const SERVER_HOST = '149.28.200.131';
+const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 // test case for varies mal-formed messages 
@@ -323,3 +325,36 @@ var h = blake2.createHash('blake2s', {digestLength: 32});
 var MyObject = {"height":0,"outputs":[{"pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0","value":50000000000}],"type":"transaction"};
 h.update(Buffer.from(canonicalize(MyObject)));
 console.log(h.digest("hex"));
+
+
+// testing storing objects
+function test_object(): void {
+
+    var ihaveobjectMessage = {
+        "type": "ihaveobject",
+        "objectid": "00228222c9632d382486ba7aac7e0bda3b4bda1d4bd79be9ae78e7e1e813d119"
+    }
+    if (!Messages_solution.IHaveObjectMessage.guard(ihaveobjectMessage)) {
+        logger.info("incorrect message");
+        return;
+    }
+
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test objects")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(ihaveobjectMessage) + '\n');
+    });
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+    })
+    
+    client.on('close', () => {
+        console.log('Server disconnected');
+    })
+}test_object();

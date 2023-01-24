@@ -150,7 +150,7 @@ export class Peer extends EventEmitter{
   }
   async onMessageIHaveObject(msg: IHaveObjectMessageType) {
     this.info(`Peer reported knowledge of object ${msg.objectid}`)
-    if (!objectManager.haveObjectID(msg.objectid)) {
+    if (! await objectManager.haveObjectID(msg.objectid)) {
       this.info(`We do not have object ${msg.objectid}. Requesting.`)
       await this.sendGetObject(msg.objectid)
     }
