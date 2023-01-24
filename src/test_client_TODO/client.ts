@@ -294,7 +294,7 @@ async function test(): Promise<void> {
     }
 };
 
-test();
+// test();
 
 
 // testing all sorts of mal-formed messages                     SUCCESS
@@ -315,3 +315,11 @@ async function mal_messages_test(): Promise<void> {
 }
 
 // mal_messages_test();
+
+
+// testing hashing
+var blake2 = require('blake2');
+var h = blake2.createHash('blake2s', {digestLength: 32});
+var MyObject = {"height":0,"outputs":[{"pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0","value":50000000000}],"type":"transaction"};
+h.update(Buffer.from(canonicalize(MyObject)));
+console.log(h.digest("hex"));
