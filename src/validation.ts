@@ -34,6 +34,9 @@ export async function block_validate(tx:BlockType): Promise<boolean> {
     return true
 }
 
+// const fromHexString = (hexString: string | null) =>
+//   Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+
 export async function transaction_validate(tx:TransactionType): Promise<boolean> {
     if ("height" in tx) {
         // coinbase
@@ -43,6 +46,10 @@ export async function transaction_validate(tx:TransactionType): Promise<boolean>
     let msg = canonicalize(removeAllSigHex(tx))
     for (let input of tx.inputs)
     {
+        if (!await objectManager.haveObjectID(input.outpoint.txid)) {
+            logger.debug(`We dont't have transction input.`)
+            return false;
+        }
         let prev_tx = Transaction.check(await objectManager.getObject(input.outpoint.txid))
         let pubkey = prev_tx.outputs[input.outpoint.index].pubkey
         let result = await ed.verify(input.sig??"__NULL__", msg, pubkey)

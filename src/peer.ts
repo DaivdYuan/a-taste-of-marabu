@@ -158,10 +158,10 @@ export class Peer extends EventEmitter{
   async onMessageObject(msg: ObjectMessageType) {
     let objectid = ObjectManager.hashObject(msg.object)
     logger.info(`Peer sent object ${objectid}`)
-    if (await objectManager.haveObjectID(objectid)) {
-      this.info(`We already have object ${objectid}. Ignoring.`)
-      return 
-    } // TODO WE SHOULD IGNORE OBJECTS IN OUR DATABASE
+    // if (await objectManager.haveObjectID(objectid)) {
+    //   this.info(`We already have object ${objectid}. Ignoring.`)
+    //   return 
+    // } // TODO WE SHOULD IGNORE OBJECTS IN OUR DATABASE
 
     ChainObject.match(
       async (block) => {
@@ -178,6 +178,8 @@ export class Peer extends EventEmitter{
           this.info(`We do not have vaild TRANSACTION object ${objectid}. Storing.`)
           await objectManager.storeObject(msg.object, objectid)
           this.emit("gossiping", objectid)
+        } else{
+          this.info("transaction invalidated")
         }
       }
     )(msg.object)

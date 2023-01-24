@@ -425,4 +425,96 @@ function test_object(): void {
     client.on('close', () => {
         console.log('Server disconnected');
     })
-}test_object();
+}
+// test_object();
+
+
+
+
+
+
+
+
+
+// testing storing objects
+function test_transaction(): void {
+
+    var objectMessage = {
+        "type": "object",
+        "object": {
+            "type":"transaction",
+            "outputs":[{
+                "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
+                "value":50000000000
+            }],
+            "height":0,
+        }
+    }
+
+    if (!Messages_solution.ObjectMessage.guard(objectMessage)) {
+        logger.info("incorrect object message");
+        return
+    }
+
+    var valid_txid = "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
+    var invalid_txid = "c303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
+
+    var objectMessage_invalid = {
+        "type": "object",
+        "object" : {
+            "inputs":[{
+                "outpoint":{
+                    "index":0,
+                    "txid": invalid_txid
+                },
+                "sig":"060bf7cbe141fecfebf6dafbd6ebbcff25f82e729a7770f4f3b1f81a7ec8a0ce4b287597e609b822111bbe1a83d682ef14f018f8a9143cef25ecc9a8b0c1c405"
+            }],
+            "outputs":[{
+                "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
+                "value":10
+            }],
+            "type":"transaction"
+        }
+    }
+
+    var objectMessage_valid = {
+        "type": "object",
+        "object" : {
+            "inputs":[{
+                "outpoint":{
+                    "index":0,
+                    "txid": valid_txid
+                },
+                "sig":"060bf7cbe141fecfebf6dafbd6ebbcff25f82e729a7770f4f3b1f81a7ec8a0ce4b287597e609b822111bbe1a83d682ef14f018f8a9143cef25ecc9a8b0c1c405"
+            }],
+            "outputs":[{
+                "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
+                "value":10
+            }],
+            "type":"transaction"
+        }
+    }
+    
+
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test objects")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(objectMessage) + '\n'); // SHOULD BE BROADCASTED
+        await delay(1000);
+        client.write(canonicalize(objectMessage_valid) + '\n'); // SHOULD(N'T) BE BROADCASTED
+        await delay(1000);
+    });
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+    })
+    
+    client.on('close', () => {
+        console.log('Server disconnected');
+    })
+}test_transaction();
