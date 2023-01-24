@@ -7,13 +7,14 @@ import { Messages, ChainObject,
          AnnotatedError 
         } from './message'
 import { peerManager } from './peermanager'
-import { objectManager, ObjectManager } from './objectmanager'
+import { ObjectManager, objectManager } from './objectmanager'
 import { canonicalize } from 'json-canonicalize'
+import { EventEmitter } from 'events'
 
 const VERSION = '0.9.0'
 const NAME = 'Malibu (pset1)'
 
-export class Peer {
+export class Peer extends EventEmitter{
   active: boolean = false
   socket: MessageSocket
   handshakeCompleted: boolean = false
@@ -138,7 +139,7 @@ export class Peer {
   }
   async onMessageGetObject(msg: GetObjectMessageType) {
     this.info(`Peer requested object ${msg.objectid}`)
-    if (objectManager.haveObjectID(msg.objectid)) {
+    if (await objectManager.haveObjectID(msg.objectid)) {
       this.info(`We have object ${msg.objectid}. Sending.`)
       await this.sendObject(msg.objectid)
     } else {
@@ -154,12 +155,14 @@ export class Peer {
     }
   }
   async onMessageObject(msg: ObjectMessageType) {
+    let objectid = ObjectManager.hashObject(msg.object)
+    logger.info(`Peer sent object ${objectid}`)
+    if (await objectManager.haveObjectID(objectid)) {
+      this.info(`We already have object ${objectid}. Ignoring.`)
+      return 
+    }
     // TODO: Validate object
     ChainObject.match(
-      () => {
-        this.info(`Peer sent GENESIS BLOCK`)
-        //validate block
-      },
       () => {
         this.info(`Peer sent BLOCK object`)
         //validate block
@@ -170,16 +173,11 @@ export class Peer {
       }
     )(msg.object)
 
-    let objectString = canonicalize(msg.object)
-    let objectid = ObjectManager.hashObject(objectString)
-    this.info(`Peer sent object ${objectid}`)
-    if (objectManager.haveObjectID(objectid)) {
-      this.info(`We already have object ${objectid}. Ignoring.`)
-      return
-    }
     this.info(`We do not have object ${objectid}. Storing.`)
-    await objectManager.storeObject(objectString, objectid)
+    await objectManager.storeObject(msg.object, objectid)
+    this.emit("gossiping", objectid)
   }
+
   log(level: string, message: string) {
     logger.log(level, `[peer ${this.socket.peerAddr}:${this.socket.netSocket.remotePort}] ${message}`)
   }
@@ -193,6 +191,7 @@ export class Peer {
     this.log('debug', message)
   }
   constructor(socket: MessageSocket) {
+    super()
     this.socket = socket
 
     socket.netSocket.on('connect', this.onConnect.bind(this))
