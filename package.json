@@ -10,6 +10,7 @@
   "author": "Dionysis Zindros",
   "license": "MIT",
   "dependencies": {
+    "@types/blake2": "^4.0.1",
     "@types/node": "^17.0.23",
     "@types/semver": "^7.3.9",
     "blake2": "^4.1.1",
