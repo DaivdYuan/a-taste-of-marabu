@@ -1,8 +1,11 @@
 import { logger } from './logger'
-import {  BlockType, TransactionType } from './message'
+import {  BlockType, TransactionType, Transaction } from './message'
 import { ObjectManager, objectManager } from './objectmanager'
 import { canonicalize } from 'json-canonicalize'
 import * as blake2 from 'blake2'
+import * as ed from '@noble/ed25519';
+import { match } from 'runtypes'
+import assert from 'assert'
 
 
 const GenesisBlock:BlockType = {
@@ -16,8 +19,34 @@ const GenesisBlock:BlockType = {
     "type": "block"
 }
 
-function transaction_validate(tx:TransactionType): boolean {
+objectManager.storeObject(GenesisBlock)
 
+function removeAllSigHex(tx:TransactionType): TransactionType {
+    let ret:TransactionType = Object.create(tx)
+    assert("inputs" in ret)
+    for (let input of ret.inputs)
+        input.sig = null;
+    return ret
+}
 
-    return false
+export async function block_validate(tx:BlockType): Promise<boolean> {
+    // you may consider blocks and coinbase transactions to always be valid
+    return true
+}
+
+export async function transaction_validate(tx:TransactionType): Promise<boolean> {
+    if ("height" in tx) {
+        // coinbase
+        // you may consider blocks and coinbase transactions to always be valid
+        return true
+    }
+    let msg = canonicalize(removeAllSigHex(tx))
+    for (let input of tx.inputs)
+    {
+        let prev_tx = Transaction.check(await objectManager.getObject(input.outpoint.txid))
+        let pubkey = prev_tx.outputs[input.outpoint.index].pubkey
+        let result = await ed.verify(input.sig??"__NULL__", msg, pubkey)
+        if (!result) return false;
+    }
+    return true
 }

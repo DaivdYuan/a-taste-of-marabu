@@ -10,6 +10,7 @@ import { peerManager } from './peermanager'
 import { ObjectManager, objectManager } from './objectmanager'
 import { canonicalize } from 'json-canonicalize'
 import { EventEmitter } from 'events'
+import { block_validate, transaction_validate } from './validation'
 
 const VERSION = '0.9.0'
 const NAME = 'Malibu (pset1)'
@@ -161,21 +162,25 @@ export class Peer extends EventEmitter{
       this.info(`We already have object ${objectid}. Ignoring.`)
       return 
     }
-    // TODO: Validate object
+
     ChainObject.match(
-      () => {
+      async (block) => {
         this.info(`Peer sent BLOCK object`)
-        //validate block
+        if (await block_validate(block)) {
+          this.info(`We do not have vaild BLOCK object ${objectid}. Storing.`)
+          await objectManager.storeObject(msg.object, objectid)
+          this.emit("gossiping", objectid)
+        }
       },
-      () => {
+      async (tx) => {
         this.info(`Peer sent TRANSACTION object`)
-        //validate transaction
+        if (await transaction_validate(tx)) {
+          this.info(`We do not have vaild TRANSACTION object ${objectid}. Storing.`)
+          await objectManager.storeObject(msg.object, objectid)
+          this.emit("gossiping", objectid)
+        }
       }
     )(msg.object)
-
-    this.info(`We do not have object ${objectid}. Storing.`)
-    await objectManager.storeObject(msg.object, objectid)
-    this.emit("gossiping", objectid)
   }
 
   log(level: string, message: string) {
