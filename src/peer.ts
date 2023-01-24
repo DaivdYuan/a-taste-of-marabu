@@ -60,7 +60,7 @@ export class Peer extends EventEmitter{
   async sendObject(objectid: string) {
     this.sendMessage({
       type: 'object',
-      object: objectManager.getObject(objectid),
+      object: await objectManager.getObject(objectid),
     })
   }
   sendMessage(obj: object) {
@@ -161,7 +161,7 @@ export class Peer extends EventEmitter{
     if (await objectManager.haveObjectID(objectid)) {
       this.info(`We already have object ${objectid}. Ignoring.`)
       return 
-    }
+    } // TODO WE SHOULD IGNORE OBJECTS IN OUR DATABASE
 
     ChainObject.match(
       async (block) => {

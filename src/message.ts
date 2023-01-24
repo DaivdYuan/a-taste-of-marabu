@@ -58,7 +58,7 @@ export const Transaction = Record({
   type: Literal('transaction'),
   outputs: Array(Record({
     pubkey: String.withConstraint(x => x.length === 64),
-    value: BigInt
+    value: Number
   }))
 }).And(Record({
     inputs: Array(Record({

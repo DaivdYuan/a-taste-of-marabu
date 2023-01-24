@@ -13,7 +13,7 @@ export class ObjectManager{
     }
 
     async haveObjectID(objectid: string): Promise<boolean> {
-        return await db.exists(objectid)
+        return db.exists(objectid)
     }
 
     async haveObject(object: ChainObjectType): Promise<boolean> {

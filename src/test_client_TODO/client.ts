@@ -320,11 +320,15 @@ async function mal_messages_test(): Promise<void> {
 
 
 // testing hashing
+
+var pubkey = "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee" // TRUE KEY
 var blake2 = require('blake2');
 var h = blake2.createHash('blake2s', {digestLength: 32});
 var MyObject = {"height":0,"outputs":[{"pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0","value":50000000000}],"type":"transaction"};
 h.update(Buffer.from(canonicalize(MyObject)));
-console.log(h.digest("hex"));
+var blake2s_key = h.digest("hex")
+console.log(pubkey, blake2s_key);
+console.log(pubkey.length);
 
 
 // testing storing objects
@@ -332,12 +336,72 @@ function test_object(): void {
 
     var ihaveobjectMessage = {
         "type": "ihaveobject",
-        "objectid": "00228222c9632d382486ba7aac7e0bda3b4bda1d4bd79be9ae78e7e1e813d119"
+        "objectid": "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
     }
     if (!Messages_solution.IHaveObjectMessage.guard(ihaveobjectMessage)) {
-        logger.info("incorrect message");
+        logger.info("incorrect ihaveobject message");
         return;
     }
+
+    var blockMessage = {
+        "type": "object",
+        "object" : {
+            "T": "00000000abc00000000000000000000000000000000000000000000000000000",
+            "created": 1671062400,
+            "miner": "Marabu",
+            "nonce": "000000000000000000000000000000000000000000000000000000021bea03ed",
+            "note": "The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers",
+            "previd": null,
+            "txids": [],
+            "type": "block"
+        }
+    }
+    
+    if (!Messages_solution.ObjectMessage.guard(blockMessage)) {
+        logger.info("incorrect object block message");
+        return
+    }
+
+    var objectMessage = {
+        "type": "object",
+        "object": {
+            "type":"transaction",
+            "outputs":[{
+                "pubkey":"158f8add086cc348e22913b6590c71b7d7754e42134a127a50648bf07969d9a0",
+                "value":50000000000
+            }],
+            "height":0,
+        }
+    }
+
+    if (!Messages_solution.ObjectMessage.guard(objectMessage)) {
+        logger.info("incorrect object message");
+        return
+    }
+
+    var objectMessage2 = {
+        "type": "object",
+        "object" : {
+            "inputs":[{
+                "outpoint":{
+                    "index":0,
+                    "txid":"b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
+                },
+                "sig":"060bf7cbe141fecfebf6dafbd6ebbcff25f82e729a7770f4f3b1f81a7ec8a0ce4b287597e609b822111bbe1a83d682ef14f018f8a9143cef25ecc9a8b0c1c405"
+            }],
+            "outputs":[{
+                "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
+                "value":10
+            }],
+            "type":"transaction"
+        }
+    }
+
+    if (!Messages_solution.ObjectMessage.guard(objectMessage2)) {
+        logger.info("incorrect object message2");
+        return
+    }
+    
 
     const client = new net.Socket();
     console.log("--------------------------------");
@@ -347,6 +411,10 @@ function test_object(): void {
         client.write(Messages.helloMessage.json + '\n');
         await delay(1000);
         client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(ihaveobjectMessage) + '\n');
+        await delay(1000);
+        client.write(canonicalize(objectMessage) + '\n');
         await delay(1000);
         client.write(canonicalize(ihaveobjectMessage) + '\n');
     });
