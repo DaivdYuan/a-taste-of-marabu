@@ -1,30 +1,34 @@
 
 import { db } from './store'
 import { logger } from './logger'
-
-var blake2 = require('blake2')
-var h = blake2.createHash('blake2b', {digestLength: 64})
+import * as blake2 from 'blake2'
+import { canonicalize } from 'json-canonicalize'
 
 export class ObjectManager{
 
-    static hashObject(object: string): string {
-        return h.update(object).digest('hex')
+    static hashObject(object: any): string {
+        let buff = Buffer.from(canonicalize(object))
+        var h = blake2.createHash('blake2b', {digestLength: 64})
+        return h.update(buff).digest('hex')
     }
 
-    haveObjectID(objectid: string): boolean {
-        return db.haveObject(objectid)
+    async haveObjectID(objectid: string): Promise<boolean> {
+        return db.exists(objectid)
     }
-    haveObjectString(object: string): boolean {
+
+    async haveObject(object: string): Promise<boolean> {
         return this.haveObjectID(ObjectManager.hashObject(object))
     }
-    async getObject(objectid: string): Promise<string> {
-        return db.getObject(objectid)
+
+    async getObject(objectid: string): Promise<any> {
+        return db.get(objectid)
     }
-    async storeObject(object: string, objectid?: string): Promise<void> {
+
+    async storeObject(object: any, objectid?: string): Promise<void> {
         if (!objectid) {
             objectid = ObjectManager.hashObject(object)
         }
-        return db.storeObject(objectid, object)
+        return db.put(objectid, object)
     }
 }
 
