@@ -85,19 +85,8 @@ export const Block = Record({
 }))
 export type BlockType = Static<typeof Block>
 
-export const GenesisBlock = Record({
-  object: Literal('block'),
-  txids: Array(String),
-  nonce: Literal('000000000000000000000000000000000000000000000000000000021bea03ed'),
-  previd: Null,
-  created: Literal(1671062400),
-  T: Literal('00000000abc00000000000000000000000000000000000000000000000000000'),
-  miner: Literal('Marabu'),
-  note: Literal('The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers')
-})
-export type GenesisBlockType = Static<typeof GenesisBlock>
 
-export const ChainObject = Union(GenesisBlock, Block, Transaction)
+export const ChainObject = Union(Block, Transaction)
 export const ObjectMessage = Record({
   type: Literal('object'),
   object: ChainObject
