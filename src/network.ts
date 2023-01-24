@@ -17,6 +17,7 @@ export class Network {
       logger.info(`New connection from peer ${socket.remoteAddress}`)
       const peer = new Peer(new MessageSocket(socket, `${socket.remoteAddress}:${socket.remotePort}`))
       this.peers.push(peer)
+      peer.on("gossiping",this.OnGossiping.bind(this))
       peer.onConnect()
     })
 
@@ -27,11 +28,20 @@ export class Network {
       logger.info(`Attempting connection to known peer ${peerAddr}`)
       try {
         const peer = new Peer(MessageSocket.createClient(peerAddr))
+        peer.on("gossiping",this.OnGossiping.bind(this))
         this.peers.push(peer)
       }
       catch (e: any) {
         logger.warn(`Failed to create connection to peer ${peerAddr}: ${e.message}`)
       }
+    }
+  }
+
+  OnGossiping(objectid: string)
+  {
+    for (const peer of this.peers)
+    {
+      peer.sendIHaveObject(objectid)
     }
   }
 }
