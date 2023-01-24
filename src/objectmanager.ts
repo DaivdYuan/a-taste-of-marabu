@@ -2,12 +2,10 @@
 import { db } from './store'
 import { logger } from './logger'
 import { canonicalize } from 'json-canonicalize'
-
-var blake2 = require('blake2');
-
+import {ChainObjectType } from './message'
 export class ObjectManager{
 
-    static hashObject(object: any): string {
+    static hashObject(object: ChainObjectType): string {
         let buff = Buffer.from(canonicalize(object))
         var h = blake2.createHash('blake2s', {digestLength: 32})
         return h.update(buff).digest('hex')
@@ -17,11 +15,11 @@ export class ObjectManager{
         return db.exists(objectid)
     }
 
-    async haveObject(object: string): Promise<boolean> {
+    async haveObject(object: ChainObjectType): Promise<boolean> {
         return this.haveObjectID(ObjectManager.hashObject(object))
     }
 
-    async getObject(objectid: string): Promise<any> {
+    async getObject(objectid: string): Promise<ChainObjectType> {
         return db.get(objectid)
     }
 
