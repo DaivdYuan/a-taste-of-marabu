@@ -22,10 +22,16 @@ const GenesisBlock:BlockType = {
 objectManager.storeObject(GenesisBlock)
 
 function removeAllSigHex(tx:TransactionType): TransactionType {
-    let ret:TransactionType = Object.create(tx)
+    let ret:TransactionType = Object.assign({}, tx)
     assert("inputs" in ret)
-    for (let input of ret.inputs)
-        input.sig = null;
+    var new_inputs: any = [];
+    ret.inputs.forEach((input, idx) => {
+        assert("inputs" in ret)
+        var new_input = Object.assign({}, input)
+        new_input.sig = null;
+        new_inputs.push(new_input);
+    })
+    ret.inputs = new_inputs;
     return ret
 }
 
@@ -34,10 +40,9 @@ export async function block_validate(tx:BlockType): Promise<boolean> {
     return true
 }
 
-// const fromHexString = (hexString: string | null) =>
-//   Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
 
 export async function transaction_validate(tx:TransactionType): Promise<boolean> {
+    logger.info(`validating transaction`)
     if ("height" in tx) {
         // coinbase
         // you may consider blocks and coinbase transactions to always be valid
@@ -51,8 +56,17 @@ export async function transaction_validate(tx:TransactionType): Promise<boolean>
             return false;
         }
         let prev_tx = Transaction.check(await objectManager.getObject(input.outpoint.txid))
+        if (input.outpoint.index > prev_tx.outputs.length - 1) {
+            logger.debug(`Indexing out of range with transaction ${prev_tx}.`)
+        }
         let pubkey = prev_tx.outputs[input.outpoint.index].pubkey
-        let result = await ed.verify(input.sig??"__NULL__", msg, pubkey)
+        if (input.sig == null) {
+            logger.debug(`signature is null. INVALID_TX_SIGNATURE error`)
+            return false;
+        }
+        let result = await ed.verify(Uint8Array.from(Buffer.from(input.sig, 'hex')),
+                                    Uint8Array.from(Buffer.from(msg)),
+                                    Uint8Array.from(Buffer.from(pubkey, 'hex')))
         if (!result) return false;
     }
     return true

@@ -158,24 +158,25 @@ export class Peer extends EventEmitter{
   async onMessageObject(msg: ObjectMessageType) {
     let objectid = ObjectManager.hashObject(msg.object)
     logger.info(`Peer sent object ${objectid}`)
-    // if (await objectManager.haveObjectID(objectid)) {
-    //   this.info(`We already have object ${objectid}. Ignoring.`)
-    //   return 
-    // } // TODO WE SHOULD IGNORE OBJECTS IN OUR DATABASE
+    if (await objectManager.haveObjectID(objectid)) {
+      this.info(`We already have object ${objectid}. Updating.`)
+    } else {
+      this.info(`We do not have object ${objectid}. Proceeding.`)
+    }
 
     ChainObject.match(
       async (block) => {
-        this.info(`Peer sent BLOCK object`)
+        this.info(`Processing BLOCK object`)
         if (await block_validate(block)) {
-          this.info(`We do not have vaild BLOCK object ${objectid}. Storing.`)
+          this.info(`Storing BLOCK object ${objectid}.`)
           await objectManager.storeObject(msg.object, objectid)
           this.emit("gossiping", objectid)
         }
       },
       async (tx) => {
-        this.info(`Peer sent TRANSACTION object`)
+        this.info(`Processing TRANSACTION object`)
         if (await transaction_validate(tx)) {
-          this.info(`We do not have vaild TRANSACTION object ${objectid}. Storing.`)
+          this.info(`Storing TRANSACTION object ${objectid}.`)
           await objectManager.storeObject(msg.object, objectid)
           this.emit("gossiping", objectid)
         } else{

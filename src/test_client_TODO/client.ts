@@ -458,8 +458,8 @@ var tx2 = {
     }],
     "type":"transaction"
 };
-console.log(canonicalize(tx2));
-
+console.log(Buffer.from(signature_tx2, 'hex').length);
+console.log(Buffer.from(pubkey_tx1, 'hex').length);
 (async () => {
     const isValid = await ed.verify(Uint8Array.from(Buffer.from(signature_tx2, 'hex')),       // SIG
                                     Uint8Array.from(Buffer.from(canonicalize(tx2))), // MSG
@@ -552,4 +552,4 @@ function test_transaction(): void {
     })
 }
 
-// test_transaction();
+test_transaction();
