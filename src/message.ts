@@ -58,15 +58,15 @@ export const Transaction = Record({
   type: Literal('transaction'),
   outputs: Array(Record({
     pubkey: String.withConstraint(x => x.length === 64),
-    value: Number
+    value: Number.withConstraint(x => x >= 0)
   }))
 }).And(Record({
     inputs: Array(Record({
       outpoint: Record({
         txid: String.withConstraint(x => x.length === 64),
-        index: Number
+        index: Number.withConstraint(x => x >= 0 && x < 2**32)
     }),
-    sig: Union(String, Null)
+    sig: Union(String.withConstraint(x => x.length > 0), Null)
     })),
   }).Or(Record({
       height: Number,
@@ -80,7 +80,7 @@ export const Block = Record({
   txids: Array(String),
   nonce: String.withConstraint(x => x.length === 64),
   previd: Union(String.withConstraint(x => x.length === 64),Null),
-  created: Number,
+  created: Number.withConstraint(x => x >= 0 && x < 2**32),
   T: String.withConstraint(x => x.length === 64),
 }).And(Partial({
   //optional

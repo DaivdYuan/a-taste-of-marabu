@@ -175,12 +175,28 @@ export class Peer extends EventEmitter{
       },
       async (tx) => {
         this.info(`Processing TRANSACTION object`)
-        if (await transaction_validate(tx)) {
-          this.info(`Storing TRANSACTION object ${objectid}.`)
-          await objectManager.storeObject(msg.object, objectid)
-          this.emit("gossiping", objectid)
-        } else{
-          this.info("transaction invalidated")
+        let validationCode = await transaction_validate(tx)
+        switch (validationCode) {
+          case 0:
+            this.info(`Storing TRANSACTION object ${objectid}.`)
+            await objectManager.storeObject(msg.object, objectid)
+            this.emit("gossiping", objectid)
+            break
+          case -1: //unkown object
+            this.info(`Transaction ${objectid} references an unknown object.`)
+            return await this.fatalError(new AnnotatedError('UNKNOWN_OBJECT', `Transaction ${objectid} references an unknown object.`))
+          case -2: //invalid signature
+            this.info(`Transaction ${objectid} has an invalid signature.`)
+            return await this.fatalError(new AnnotatedError('INVALID_TX_SIGNATURE', `Transaction ${objectid} has an invalid signature.`))
+          case -3: //invalid outpoint range
+            this.info(`Transaction ${objectid} has an invalid outpoint.`)
+            return await this.fatalError(new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${objectid} has an invalid outpoint range.`))
+          case -4: //violation of conservation of value
+            this.info(`Transaction ${objectid} violates conservation of value.`)
+            return await this.fatalError(new AnnotatedError('INVALID_TX_CONSERVATION', `Transaction ${objectid} violates conservation of value.`))
+          case -5: //other errors
+            this.info(`Transaction ${objectid} is invalid.`)
+            return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Transaction ${objectid} is invalid.`))
         }
       }
     )(msg.object)
