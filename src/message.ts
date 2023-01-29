@@ -1,4 +1,56 @@
-import { Literal, Number, Record, String, Array, Union, Static, Tuple, Partial, BigInt, Null } from 'runtypes'
+import { Literal,
+         Record, Array, Union,
+         String, Number,
+         Static, Null, Unknown, Optional } from 'runtypes'
+
+const Hash = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
+const Sig = String.withConstraint(s => /^[0-9a-f]{128}$/.test(s))
+const PK = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
+const NonNegative = Number.withConstraint(n => n >= 0)
+const Coins = NonNegative
+
+export const OutpointObject = Record({
+  txid: Hash,
+  index: NonNegative
+})
+export type OutpointObjectType = Static<typeof OutpointObject>
+
+export const TransactionInputObject = Record({
+  outpoint: OutpointObject,
+  sig: Union(Sig, Null)
+})
+export type TransactionInputObjectType = Static<typeof TransactionInputObject>
+
+export const TransactionOutputObject = Record({
+  pubkey: PK,
+  value: Coins
+})
+export type TransactionOutputObjectType = Static<typeof TransactionOutputObject>
+
+export const CoinbaseTransactionObject = Record({
+  type: Literal('transaction'),
+  outputs: Array(TransactionOutputObject).withConstraint(a => a.length <= 1),
+  height: NonNegative
+})
+export const SpendingTransactionObject = Record({
+  type: Literal('transaction'),
+  inputs: Array(TransactionInputObject),
+  outputs: Array(TransactionOutputObject)
+})
+export const TransactionObject = Union(CoinbaseTransactionObject, SpendingTransactionObject)
+export type TransactionObjectType = Static<typeof TransactionObject>
+
+export const BlockObject = Record({
+  type: Literal('block'),
+  txids: Array(Hash),
+  nonce: String,
+  previd: Union(Hash, Null),
+  created: Number,
+  T: Hash,
+  miner: String,
+  note: String
+})
+export type BlockObjectType = Static<typeof BlockObject>
 
 export const HelloMessage = Record({
   type: Literal('hello'),
@@ -18,6 +70,28 @@ export const PeersMessage = Record({
 })
 export type PeersMessageType = Static<typeof PeersMessage>
 
+export const GetObjectMessage = Record({
+  type: Literal('getobject'),
+  objectid: Hash
+})
+export type GetObjectMessageType = Static<typeof GetObjectMessage>
+
+export const IHaveObjectMessage = Record({
+  type: Literal('ihaveobject'),
+  objectid: Hash
+})
+export type IHaveObjectMessageType = Static<typeof IHaveObjectMessage>
+
+export const ObjectTxOrBlock = Union(TransactionObject, BlockObject)
+export type ObjectType = Static<typeof ObjectTxOrBlock>
+
+export const ObjectMessage = Record({
+  type: Literal('object'),
+  object: ObjectTxOrBlock
+})
+export type ObjectMessageType = Static<typeof ObjectMessage>
+
+
 const ErrorChoices = Union(
   Literal('INTERNAL_ERROR'),
   Literal('INVALID_FORMAT'),
@@ -29,77 +103,16 @@ const ErrorChoices = Union(
   Literal('INVALID_TX_CONSERVATION'),
   Literal('INVALID_BLOCK_COINBASE'),
   Literal('INVALID_BLOCK_TIMESTAMP'),
-  Literal('INVALID_BLOCK_POW'),
-  Literal('INVALID_GENESIS')
-  
+  Literal('INVALID_BLOCK_POW')
 )
-
+export type ErrorChoice = Static<typeof ErrorChoices>
 export const ErrorMessage = Record({
   type: Literal('error'),
   name: ErrorChoices,
   description: String
 })
 export type ErrorMessageType = Static<typeof ErrorMessage>
-export type ErrorChoice = Static<typeof ErrorChoices>
 
-export const GetObjectMessage = Record({
-  type: Literal('getobject'),
-  objectid: String
-})
-export type GetObjectMessageType = Static<typeof GetObjectMessage>
-
-export const IHaveObjectMessage = Record({
-  type: Literal('ihaveobject'),
-  objectid: String
-})
-export type IHaveObjectMessageType = Static<typeof IHaveObjectMessage>
-
-export const Transaction = Record({
-  type: Literal('transaction'),
-  outputs: Array(Record({
-    pubkey: String.withConstraint(x => x.length === 64),
-    value: Number.withConstraint(x => x >= 0)
-  }))
-}).And(Record({
-    inputs: Array(Record({
-      outpoint: Record({
-        txid: String.withConstraint(x => x.length === 64),
-        index: Number.withConstraint(x => x >= 0 && x < 2**32)
-    }),
-    sig: Union(String.withConstraint(x => x.length > 0), Null)
-    })),
-  }).Or(Record({
-      height: Number,
-  }))
-) // for And
-
-export type TransactionType = Static<typeof Transaction>
-
-export const Block = Record({
-  type: Literal('block'), 
-  txids: Array(String),
-  nonce: String.withConstraint(x => x.length === 64),
-  previd: Union(String.withConstraint(x => x.length === 64),Null),
-  created: Number.withConstraint(x => x >= 0 && x < 2**32),
-  T: String.withConstraint(x => x.length === 64),
-}).And(Partial({
-  //optional
-  miner: String.withConstraint(x => x.length <= 128),
-  studentids: Array(String).withConstraint(x => x.length <= 10), 
-  note: String.withConstraint(x => x.length <= 128)
-}))
-export type BlockType = Static<typeof Block>
-
-
-export const ChainObject = Union(Block, Transaction)
-export const ObjectMessage = Record({
-  type: Literal('object'),
-  object: ChainObject
-})
-export type ChainObjectType = Static<typeof ChainObject>
-export type ObjectMessageType = Static<typeof ObjectMessage>
-
-////////////////////////////////////////////////////////
 export class AnnotatedError extends Error {
   err = ""
   constructor(name: ErrorChoice, description: string) {
@@ -118,9 +131,16 @@ export class AnnotatedError extends Error {
   }
 }
 
-////////////////////////////////////////////////////////
-
-export const Message = Union(HelloMessage, GetPeersMessage, PeersMessage, ErrorMessage, GetObjectMessage, IHaveObjectMessage, ObjectMessage)
+export const Messages = [
+  HelloMessage,
+  GetPeersMessage, PeersMessage,
+  IHaveObjectMessage, GetObjectMessage, ObjectMessage,
+  ErrorMessage
+]
+export const Message = Union(
+  HelloMessage,
+  GetPeersMessage, PeersMessage,
+  IHaveObjectMessage, GetObjectMessage, ObjectMessage,
+  ErrorMessage
+)
 export type MessageType = Static<typeof Message>
-
-export const Messages = [HelloMessage, GetPeersMessage, PeersMessage, ErrorMessage, GetObjectMessage, IHaveObjectMessage, ObjectMessage]

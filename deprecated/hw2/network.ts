@@ -7,7 +7,7 @@ import { peerManager } from './peermanager'
 const TIMEOUT_DELAY = 10000 // 10 seconds
 const MAX_BUFFER_SIZE = 100 * 1024 // 100 kB
 
-class Network {
+export class Network {
   peers: Peer[] = []
 
   async init(bindPort: number, bindIP: string) {
@@ -17,6 +17,7 @@ class Network {
       logger.info(`New connection from peer ${socket.remoteAddress}`)
       const peer = new Peer(new MessageSocket(socket, `${socket.remoteAddress}:${socket.remotePort}`))
       this.peers.push(peer)
+      peer.on("gossiping",this.OnGossiping.bind(this))
       peer.onConnect()
     })
 
@@ -27,6 +28,7 @@ class Network {
       logger.info(`Attempting connection to known peer ${peerAddr}`)
       try {
         const peer = new Peer(MessageSocket.createClient(peerAddr))
+        peer.on("gossiping",this.OnGossiping.bind(this))
         this.peers.push(peer)
       }
       catch (e: any) {
@@ -34,13 +36,12 @@ class Network {
       }
     }
   }
-  broadcast(obj: object) {
-    logger.info(`Broadcasting object to all peers: %o`, obj)
 
-    for (const peer of this.peers) {
-      if (peer.active) {
-        peer.sendMessage(obj) // intentionally delayed
-      }
+  OnGossiping(objectid: string)
+  {
+    for (const peer of this.peers)
+    {
+      peer.sendIHaveObject(objectid)
     }
   }
 }
@@ -100,5 +101,3 @@ export class MessageSocket extends EventEmitter {
     this.netSocket.end()
   }
 }
-
-export const network = new Network()

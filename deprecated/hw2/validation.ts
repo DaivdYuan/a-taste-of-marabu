@@ -58,11 +58,11 @@ export async function transaction_validate(tx:TransactionType): Promise<number> 
                 return -1 //unknown object
             }
             let prev_tx = Transaction.check(await objectManager.getObject(input.outpoint.txid))
-            inputSum += prev_tx.outputs[input.outpoint.index].value
             if (input.outpoint.index > prev_tx.outputs.length - 1) {
                 logger.debug(`Indexing out of range with transaction ${prev_tx}.`)
                 return -3 //invalid outpoint
             }
+            inputSum += prev_tx.outputs[input.outpoint.index].value
             let pubkey = prev_tx.outputs[input.outpoint.index].pubkey
             if (input.sig == null) {
                 logger.debug(`signature is null. INVALID_TX_SIGNATURE error`)

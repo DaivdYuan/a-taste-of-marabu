@@ -1,21 +1,23 @@
 import { logger } from './logger'
 import { MessageSocket } from './network'
 import semver from 'semver'
-import { Messages, ChainObject,
-         Message, HelloMessage, PeersMessage, GetPeersMessage, ErrorMessage, GetObjectMessage, IHaveObjectMessage, ObjectMessage,
-         MessageType, HelloMessageType, PeersMessageType, GetPeersMessageType, ErrorMessageType, GetObjectMessageType, IHaveObjectMessageType, ObjectMessageType,
-         AnnotatedError 
-        } from './message'
+import { AnnotatedError,
+         Message,
+         HelloMessage,
+         HelloMessageType,
+         PeersMessageType, GetPeersMessageType,
+         IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
+         ErrorMessageType } from './message'
 import { peerManager } from './peermanager'
-import { ObjectManager, objectManager } from './objectmanager'
 import { canonicalize } from 'json-canonicalize'
-import { EventEmitter } from 'events'
-import { block_validate, transaction_validate } from './validation'
+import { db, ObjectStorage } from './store'
+import { network } from './network'
+import { ObjectId } from './store'
 
 const VERSION = '0.9.0'
-const NAME = 'Malibu (pset1)'
+const NAME = 'Malibu (pset2)'
 
-export class Peer extends EventEmitter{
+export class Peer {
   active: boolean = false
   socket: MessageSocket
   handshakeCompleted: boolean = false
@@ -38,30 +40,30 @@ export class Peer extends EventEmitter{
       peers: [...peerManager.knownPeers]
     })
   }
+  async sendIHaveObject(obj: any) {
+    this.sendMessage({
+      type: 'ihaveobject',
+      objectid: ObjectStorage.id(obj)
+    })
+  }
+  async sendObject(obj: any) {
+    this.sendMessage({
+      type: 'object',
+      object: obj
+    })
+  }
+  async sendGetObject(objid: ObjectId) {
+    this.sendMessage({
+      type: 'getobject',
+      objectid: objid
+    })
+  }
   async sendError(err: AnnotatedError) {
     try {
       this.sendMessage(err.getJSON())
     } catch (error) {
       this.sendMessage(new AnnotatedError('INTERNAL_ERROR', `Failed to serialize error message: ${error}`).getJSON())
     }
-  }
-  async sendGetObject(objectid: string) {
-    this.sendMessage({
-      type: 'getobject',
-      objectid: objectid
-    })
-  }
-  async sendIHaveObject(objectid: string) {
-    this.sendMessage({
-      type: 'ihaveobject',
-      objectid: objectid
-    })
-  }
-  async sendObject(objectid: string) {
-    this.sendMessage({
-      type: 'object',
-      object: await objectManager.getObject(objectid),
-    })
   }
   sendMessage(obj: object) {
     const message: string = canonicalize(obj)
@@ -91,12 +93,16 @@ export class Peer extends EventEmitter{
     try {
       msg = JSON.parse(message)
       this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
-    }
-    catch {
+    } catch {
       return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Failed to parse incoming message as JSON: ${message}`))
     }
     if (!Message.guard(msg)) {
-      return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `The received message does not match one of the known message formats: ${message}`))
+      const validation = Message.validate(msg)
+      return await this.fatalError(new AnnotatedError(
+        'INVALID_FORMAT', 
+        `The received message does not match one of the known message formats: ${message}
+         Validation error: ${JSON.stringify(validation)}`
+      ))
     }
     if (!this.handshakeCompleted) {
       if (HelloMessage.guard(msg)) {
@@ -104,17 +110,16 @@ export class Peer extends EventEmitter{
       }
       return await this.fatalError(new AnnotatedError('INVALID_HANDSHAKE', `Received message ${message} prior to "hello"`))
     }
-
     Message.match(
       async () => {
         return await this.fatalError(new AnnotatedError('INVALID_HANDSHAKE', `Received a second "hello" message, even though handshake is completed`))
       },
       this.onMessageGetPeers.bind(this),
       this.onMessagePeers.bind(this),
-      this.onMessageError.bind(this),
-      this.onMessageGetObject.bind(this),
       this.onMessageIHaveObject.bind(this),
+      this.onMessageGetObject.bind(this),
       this.onMessageObject.bind(this),
+      this.onMessageError.bind(this)
     )(msg)
   }
   async onMessageHello(msg: HelloMessageType) {
@@ -135,87 +140,74 @@ export class Peer extends EventEmitter{
     this.info(`Remote party is requesting peers. Sharing.`)
     await this.sendPeers()
   }
-  async onMessageError(msg: ErrorMessageType) {
-    this.warn(`Peer reported error: ${msg.name}`)
-  }
-  async onMessageGetObject(msg: GetObjectMessageType) {
-    this.info(`Peer requested object ${msg.objectid}`)
-    if (await objectManager.haveObjectID(msg.objectid)) {
-      this.info(`We have object ${msg.objectid}. Sending.`)
-      await this.sendObject(msg.objectid)
-    } else {
-      this.info(`We do not have object ${msg.objectid}.`)
-      return await this.fatalError(new AnnotatedError('UNFINDABLE_OBJECT', `Peer requested object ${msg.objectid} which we do not have`))
-    }
-  }
   async onMessageIHaveObject(msg: IHaveObjectMessageType) {
-    this.info(`Peer reported knowledge of object ${msg.objectid}`)
-    if (! await objectManager.haveObjectID(msg.objectid)) {
-      this.info(`We do not have object ${msg.objectid}. Requesting.`)
+    this.info(`Peer claims knowledge of: ${msg.objectid}`)
+
+    if (!await db.exists(msg.objectid)) {
+      this.info(`Object ${msg.objectid} discovered`)
       await this.sendGetObject(msg.objectid)
     }
   }
+  async onMessageGetObject(msg: GetObjectMessageType) {
+    this.info(`Peer requested object with id: ${msg.objectid}`)
+
+    let obj
+    try {
+      obj = await ObjectStorage.get(msg.objectid)
+    } catch {
+      this.warn(`We don't have the requested object with id: ${msg.objectid}`)
+      this.sendError(new AnnotatedError('UNKNOWN_OBJECT', `Unknown object with id ${msg.objectid}`))
+      return
+    }
+    await this.sendObject(obj)
+  }
   async onMessageObject(msg: ObjectMessageType) {
-    let objectid = ObjectManager.hashObject(msg.object)
-    logger.info(`Peer sent object ${objectid}`)
-    if (await objectManager.haveObjectID(objectid)) {
-      this.info(`We already have object ${objectid}. Updating.`)
-    } else {
-      this.info(`We do not have object ${objectid}. Proceeding.`)
+    const objectid: ObjectId = ObjectStorage.id(msg.object)
+
+    this.info(`Received object with id ${objectid}: %o`, msg.object)
+
+    if (await ObjectStorage.exists(objectid)) {
+      this.debug(`Object with id ${objectid} is already known`)
+      return
+    }
+    this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
+
+    try {
+      await ObjectStorage.validate(msg.object)
+    }
+    catch (e: any) {
+      this.sendError(e)
+      return
     }
 
-    ChainObject.match(
-      async (block) => {
-        this.info(`Processing BLOCK object`)
-        if (await block_validate(block)) {
-          this.info(`Storing BLOCK object ${objectid}.`)
-          await objectManager.storeObject(msg.object, objectid)
-          this.emit("gossiping", objectid)
-        }
-      },
-      async (tx) => {
-        this.info(`Processing TRANSACTION object`)
-        let validationCode = await transaction_validate(tx)
-        switch (validationCode) {
-          case 0:
-            this.info(`Storing TRANSACTION object ${objectid}.`)
-            await objectManager.storeObject(msg.object, objectid)
-            this.emit("gossiping", objectid)
-            break
-          case -1: //unkown object
-            this.info(`Transaction ${objectid} references an unknown object.`)
-            return await this.fatalError(new AnnotatedError('UNKNOWN_OBJECT', `Transaction ${objectid} references an unknown object.`))
-          case -2: //invalid signature
-            this.info(`Transaction ${objectid} has an invalid signature.`)
-            return await this.fatalError(new AnnotatedError('INVALID_TX_SIGNATURE', `Transaction ${objectid} has an invalid signature.`))
-          case -3: //invalid outpoint range
-            this.info(`Transaction ${objectid} has an invalid outpoint.`)
-            return await this.fatalError(new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${objectid} has an invalid outpoint range.`))
-          case -4: //violation of conservation of value
-            this.info(`Transaction ${objectid} violates conservation of value.`)
-            return await this.fatalError(new AnnotatedError('INVALID_TX_CONSERVATION', `Transaction ${objectid} violates conservation of value.`))
-          case -5: //other errors
-            this.info(`Transaction ${objectid} is invalid.`)
-            return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Transaction ${objectid} is invalid.`))
-        }
-      }
-    )(msg.object)
-  }
+    await ObjectStorage.put(msg.object)
 
-  log(level: string, message: string) {
-    logger.log(level, `[peer ${this.socket.peerAddr}:${this.socket.netSocket.remotePort}] ${message}`)
+    // gossip
+    network.broadcast({
+      type: 'ihaveobject',
+      objectid: objectid
+    })
   }
-  warn(message: string) {
-    this.log('warn', message)
+  async onMessageError(msg: ErrorMessageType) {
+    this.warn(`Peer reported error: ${msg.name}`)
   }
-  info(message: string) {
-    this.log('info', message)
+  log(level: string, message: string, ...args: any[]) {
+    logger.log(
+      level,
+      `[peer ${this.socket.peerAddr}:${this.socket.netSocket.remotePort}] ${message}`,
+      ...args
+    )
   }
-  debug(message: string) {
-    this.log('debug', message)
+  warn(message: string, ...args: any[]) {
+    this.log('warn', message, ...args)
+  }
+  info(message: string, ...args: any[]) {
+    this.log('info', message, ...args)
+  }
+  debug(message: string, ...args: any[]) {
+    this.log('debug', message, ...args)
   }
   constructor(socket: MessageSocket) {
-    super()
     this.socket = socket
 
     socket.netSocket.on('connect', this.onConnect.bind(this))

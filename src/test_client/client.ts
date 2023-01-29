@@ -6,8 +6,8 @@ import * as Messages_solution from "../message"
 import { logger } from '../logger';
 import * as ed from '@noble/ed25519';
 
-// const SERVER_HOST = '149.28.200.131';
-const SERVER_HOST = '0.0.0.0';
+const SERVER_HOST = '149.28.200.131';
+//const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 // test case for varies mal-formed messages 
@@ -331,6 +331,22 @@ var blake2s_key = h.digest("hex")
 console.log(pubkey, blake2s_key);
 console.log(pubkey.length);
 
+function hashTestingObject(obj: any): string {
+    var h = blake2.createHash('blake2s', {digestLength: 32});
+    if ("inputs" in obj) {
+        for (let i = 0; i < obj.inputs.length; i++) {
+            if ("sig" in obj.inputs[i]) {
+                obj.inputs[i].sig = null;
+            }
+        }
+    }
+    h.update(Buffer.from(canonicalize(obj)));
+    return h.digest("hex");
+}
+
+console.log(hashTestingObject(MyObject), blake2s_key);
+
+
 
 // testing storing objects
 function test_object(): void {
@@ -528,6 +544,9 @@ function test_transaction(): void {
         }
     }
     
+    var objectMessage2 = {"object":{"height":0,"outputs":[{"pubkey":"2264b81a4035d9843fa9b3b4526fcbf67617f6428fb9d5d4d16e3c1280222da5","value":50000000000}],"type":"transaction"},"type":"object"}
+    var objectMessage3 = {"object":{"inputs":[{"outpoint":{"index":0,"txid":"ad2760c0ad671f19a3a130a74ff208b8e6330e2f8d6688c24c7924c55c97717f"},"sig":"a0d96df529d0e7b4a476b5c3b3b6ab90045a4ec50f963733085031b213c0ddb005ddfdf8748d09cd06072bddbe23929bd81248cb1d7aa1c6a2b334cf03cb1d0e"}],"outputs":[{"pubkey":"2264b81a4035d9843fa9b3b4526fcbf67617f6428fb9d5d4d16e3c1280222da5","value":10}],"type":"transaction"},"type":"object"}
+
 
     const client = new net.Socket();
     console.log("--------------------------------");
@@ -541,7 +560,12 @@ function test_transaction(): void {
         client.write(canonicalize(objectMessage) + '\n'); // SHOULD BE BROADCASTED
         await delay(1000);
         client.write(canonicalize(objectMessage_valid) + '\n'); // SHOULD(N'T) BE BROADCASTED
+        //await delay(1000);
+        //client.write(canonicalize(objectMessage_invalid) + '\n'); // SHOULD(N'T) BE BROADCASTED
         await delay(1000);
+        client.write(canonicalize(objectMessage2) + '\n');
+        await delay(1000);
+        client.write(canonicalize(objectMessage3) + '\n');
     });
     client.on('data', (data) => {
         console.log(`Server sent: ${data}`);
