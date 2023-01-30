@@ -37,6 +37,17 @@ export class ObjectStorage {
     logger.debug(`Storing object with id ${this.id(object)}: %o`, object)
     return await db.put(`object:${this.id(object)}`, object)
   }
+  static async putUTXO(objectid: ObjectId, txids: string[]) {
+    logger.debug(`Storing UTXO with id ${objectid}: %o`, txids)
+    return await db.put(`utxo:${objectid}`, txids)
+  }
+  static async getUTXO(objectid: ObjectId) {
+    try {
+      return await db.get(`utxo:${objectid}`)
+    } catch {
+      throw new AnnotatedError('UNKNOWN_OBJECT', `Error fetching UTXO: Object ${objectid} not known locally`)
+    }
+  }
   static async validate(object: ObjectType) {
     if (!ObjectTxOrBlock.guard(object)) {
       throw new AnnotatedError('INVALID_FORMAT', 'Failed to parse object')
