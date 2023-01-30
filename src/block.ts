@@ -1,5 +1,6 @@
 import { ObjectId, ObjectStorage } from "./store";
 import { AnnotatedError, BlockObjectType, TransactionInputObjectType, TransactionObjectType, TransactionOutputObjectType, OutpointObjectType, SpendingTransactionObject } from "./message";
+import { UTXOManager } from "./UTXOmanager";
 
 export class Block {
     objectid: ObjectId
@@ -45,8 +46,8 @@ export class Block {
         // here to validate basics of the block
         // your code here...
 
-        // then validate UTXO
-        
+        // validate UTXO
+        UTXOManager.extendUTXO(this.objectid)
 
     }
 }

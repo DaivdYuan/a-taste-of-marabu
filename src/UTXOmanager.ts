@@ -4,21 +4,20 @@ import { Transaction } from "./transaction"
 import { AnnotatedError } from "./message"
 
 export class UTXO {
-    txids: ObjectId[] = []
     lastBlockid: ObjectId | null = null
 
-    async getSet() {
-        return this.txids
+    async getCurrentSet() {
+        return UTXO.getUTXObyId(this.lastBlockid)
     }
 
-    async extendUTXO(blockid: ObjectId) {
+    async extendUTXO(blockid: ObjectId): Promise<string[]> {
         const block = await Block.byId(blockid)
         if (block.previousBlock !== this.lastBlockid) {
             console.log("Not extending on the last block")
-            return
+            return []
         }
         await block.validate()
-        let newUTXO = this.txids.slice()
+        let newUTXO = await UTXO.getUTXObyId(this.lastBlockid)
         for (const txid of block.transactions) {
             const tx = await Transaction.byId(txid)
             await tx.validate()
@@ -27,27 +26,24 @@ export class UTXO {
                 const txInputId = txInput.outpoint.txid;
                 const prevTx = await Transaction.byId(txInputId);
                 await prevTx.validate();
-                if (!this.txids.includes(txInputId)) {
+                if (!newUTXO.includes(txInputId)) {
                     throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${txInputId} is not in the UTXO set`)
                 }
                 newUTXO = newUTXO.filter((id) => id !== txInputId)
             }
             newUTXO.push(txid)
         }
-        this.txids = newUTXO
         this.lastBlockid = blockid
-        ObjectStorage.putUTXO(this.lastBlockid, this.txids)
+        ObjectStorage.putUTXO(this.lastBlockid, newUTXO)
+        return newUTXO
     }
 
-    static async getFormerUTXObyId(blockid: ObjectId): Promise<ObjectId[]> {
-        const block = await Block.byId(blockid)
-        if (block.previousBlock === null) {
+    static async getUTXObyId(blockid: ObjectId | null): Promise<ObjectId[]> {
+        if (blockid === null) {
+            console.log("No UTXO set for null blockid")
             return []
         }
-        return await ObjectStorage.getUTXO(block.previousBlock)
-    }
-
-    static async getUTXObyId(blockid: ObjectId): Promise<ObjectId[]> {
         return await ObjectStorage.getUTXO(blockid)
     }
 }
+export const UTXOManager = new UTXO()
