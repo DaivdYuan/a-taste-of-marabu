@@ -1,5 +1,5 @@
 import { ObjectId, ObjectStorage } from "./store"
-import { Block } from "./Block"
+import { Block } from "./block"
 import { Transaction } from "./transaction"
 import { AnnotatedError } from "./message"
 

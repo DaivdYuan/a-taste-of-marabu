@@ -5,6 +5,7 @@ import delay from 'delay';
 import * as Messages_solution from "../message"
 import { logger } from '../logger';
 import * as ed from '@noble/ed25519';
+import { ObjectStorage } from '../store';
 
 const SERVER_HOST = '149.28.200.131';
 //const SERVER_HOST = '0.0.0.0';
@@ -321,30 +322,31 @@ async function mal_messages_test(): Promise<void> {
 
 
 // testing hashing
-
-var pubkey = "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee" // TRUE KEY
-var blake2 = require('blake2');
-var h = blake2.createHash('blake2s', {digestLength: 32});
-var MyObject = {"height":0,"outputs":[{"pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0","value":50000000000}],"type":"transaction"};
-h.update(Buffer.from(canonicalize(MyObject)));
-var blake2s_key = h.digest("hex")
-console.log(pubkey, blake2s_key);
-console.log(pubkey.length);
-
-function hashTestingObject(obj: any): string {
+function test_hash() {
+    var pubkey = "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee" // TRUE KEY
+    var blake2 = require('blake2');
     var h = blake2.createHash('blake2s', {digestLength: 32});
-    if ("inputs" in obj) {
-        for (let i = 0; i < obj.inputs.length; i++) {
-            if ("sig" in obj.inputs[i]) {
-                obj.inputs[i].sig = null;
+    var MyObject = {"height":0,"outputs":[{"pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0","value":50000000000}],"type":"transaction"};
+    h.update(Buffer.from(canonicalize(MyObject)));
+    var blake2s_key = h.digest("hex")
+    console.log(pubkey, blake2s_key);
+    console.log(pubkey.length);
+
+    function hashTestingObject(obj: any): string {
+        var h = blake2.createHash('blake2s', {digestLength: 32});
+        if ("inputs" in obj) {
+            for (let i = 0; i < obj.inputs.length; i++) {
+                if ("sig" in obj.inputs[i]) {
+                    obj.inputs[i].sig = null;
+                }
             }
         }
+        h.update(Buffer.from(canonicalize(obj)));
+        return h.digest("hex");
     }
-    h.update(Buffer.from(canonicalize(obj)));
-    return h.digest("hex");
+    
+    console.log(hashTestingObject(MyObject), blake2s_key);
 }
-
-console.log(hashTestingObject(MyObject), blake2s_key);
 
 
 
@@ -446,42 +448,44 @@ function test_object(): void {
 // test_object();
 
 
+function test_sig () {
 
+    // testing signature verification
+    var pubkey_tx1 = "958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0"
+    var tx1 = {
+        "type":"transaction",
+        "outputs":[{
+            "pubkey":pubkey_tx1,
+            "value":50000000000
+        }],
+        "height":0,
+    };
 
-// testing signature verification
-var pubkey_tx1 = "958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0"
-var tx1 = {
-    "type":"transaction",
-    "outputs":[{
-        "pubkey":pubkey_tx1,
-        "value":50000000000
-    }],
-    "height":0,
-};
+    var signature_tx2 = "060bf7cbe141fecfebf6dafbd6ebbcff25f82e729a7770f4f3b1f81a7ec8a0ce4b287597e609b822111bbe1a83d682ef14f018f8a9143cef25ecc9a8b0c1c405"
+    var tx2 = {
+        "inputs":[{
+            "outpoint":{
+                "index":0,
+                "txid": "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
+            },
+            "sig":null
+        }],
+        "outputs":[{
+            "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
+            "value":10
+        }],
+        "type":"transaction"
+    };
+    console.log(Buffer.from(signature_tx2, 'hex').length);
+    console.log(Buffer.from(pubkey_tx1, 'hex').length);
+    (async () => {
+        const isValid = await ed.verify(Uint8Array.from(Buffer.from(signature_tx2, 'hex')),       // SIG
+                                        Uint8Array.from(Buffer.from(canonicalize(tx2))), // MSG
+                                        Uint8Array.from(Buffer.from(pubkey_tx1, 'hex')));         // PBK
+        logger.debug(isValid);
+    })();
+}
 
-var signature_tx2 = "060bf7cbe141fecfebf6dafbd6ebbcff25f82e729a7770f4f3b1f81a7ec8a0ce4b287597e609b822111bbe1a83d682ef14f018f8a9143cef25ecc9a8b0c1c405"
-var tx2 = {
-    "inputs":[{
-        "outpoint":{
-            "index":0,
-            "txid": "b303d841891f91af118a319f99f5984def51091166ac73c062c98f86ea7371ee"
-        },
-        "sig":null
-    }],
-    "outputs":[{
-        "pubkey":"958f8add086cc348e229a3b6590c71b7d7754e42134a127a50648bf07969d9a0",
-        "value":10
-    }],
-    "type":"transaction"
-};
-console.log(Buffer.from(signature_tx2, 'hex').length);
-console.log(Buffer.from(pubkey_tx1, 'hex').length);
-(async () => {
-    const isValid = await ed.verify(Uint8Array.from(Buffer.from(signature_tx2, 'hex')),       // SIG
-                                    Uint8Array.from(Buffer.from(canonicalize(tx2))), // MSG
-                                    Uint8Array.from(Buffer.from(pubkey_tx1, 'hex')));         // PBK
-    logger.debug(isValid);
-})();
 
 
 
@@ -576,4 +580,47 @@ function test_transaction(): void {
     })
 }
 
-test_transaction();
+// test_transaction();
+
+
+function test_POW() {
+    var genesis =  {
+        "T": "00000000abc00000000000000000000000000000000000000000000000000000",
+        "created": 1671062400,
+        "miner": "Marabu",
+        "nonce": "000000000000000000000000000000000000000000000000000000021bea03ed",
+        "note": "The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers",
+        "previd": null,
+        "txids": [],
+        "type": "block"
+      }
+    
+    var spend_genesis = {
+        "T": "00000000abc00000000000000000000000000000000000000000000000000000",
+        "created": 1671148800,
+        "miner": "Marabu Bounty Hunter",
+        "nonce": "15551b5116783ace79cf19d95cca707a94f48e4cc69f3db32f41081dab3e6641",
+        "note": "First block on genesis, 50 bu reward",
+        "previd": "0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2",
+        "txids": [
+            "8265faf623dfbcb17528fcd2e67fdf78de791ed4c7c60480e8cd21c6cdc8bcd4"
+        ],
+        "type": "block"
+    }
+    
+    var tx = {
+        "type": "transaction",
+        "height": 1,
+        "outputs": [{
+            "pubkey": "daa520a25ccde0adad74134f2be50e6b55b526b1a4de42d8032abf7649d14bfc",
+            "value": 50000000000000
+        }]
+    }
+    
+    var T = "00000000abc00000000000000000000000000000000000000000000000000000"
+    console.log(ObjectStorage.id(genesis))
+    console.log(ObjectStorage.id(spend_genesis))
+    console.log(ObjectStorage.id(spend_genesis) < T)
+}
+
+test_POW()

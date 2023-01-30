@@ -46,6 +46,13 @@ export class Block {
         // here to validate basics of the block
         // your code here...
 
+        if (this.T != "00000000abc00000000000000000000000000000000000000000000000000000") {
+            throw new AnnotatedError('INVALID_FORMAT', `Target isn't set to ...00abc00...`)
+        }
+        if (this.objectid > this.T) {
+            throw new AnnotatedError('INVALID_BLOCK_POW', `Block ID isn't below target.`)
+        }
+
         // validate UTXO
         UTXOManager.extendUTXO(this.objectid)
 
