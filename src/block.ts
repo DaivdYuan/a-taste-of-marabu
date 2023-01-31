@@ -6,6 +6,7 @@ import { Transaction } from './transaction'
 import delay from 'delay';
 
 const TIMEOUT_DELAY = 10000
+const BLOCK_REWARD = 50 * (10**12)
 
 export class Block {
     objectid: ObjectId
@@ -17,27 +18,54 @@ export class Block {
     miner: string = ""
     note: string = ""
 
-    // checking two things here: Block Validation 7. & 8.
+    // checking two things here: Block Validation 7. & 8. & 9b
     async resolveCoinbase(transactions: Transaction[]) {
         var coinbaseTx_hash: string | null = null;
+        var coinbaseTx_value: number | null = null;
+        var total_reward: number = BLOCK_REWARD;
         transactions.forEach((tx, tx_idx) => {
             if (tx.height != null) { // this is a coinbase tx
-                if (tx_idx != 0) { // coinbase tx can only have tx_idx 0, i.e. be the first tx
-                    throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase tx appeared @ ${tx_idx}`)
-                } else { // valid coinbase tx
+                if (tx_idx != 0) {
+                    throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase tx appeared @ ${tx_idx}`) // Block Validation 7.
+                } else {
                     coinbaseTx_hash = tx.txid
+                    coinbaseTx_value = tx.outputs[0].value
                 }
-            } else { // verify Block Validation 8
+            } else { // this is a normal transaction
                 if (coinbaseTx_hash != null) {
                     var spend_tx_hashes = tx.inputs.map((input, input_idx)=>{
                         return input.outpoint.txid
                     })
                     if (spend_tx_hashes.includes(coinbaseTx_hash)) {
-                        throw new AnnotatedError('INVALID_TX_OUTPOINT', 'Detect spending Coinbase Tx @ ${tx_idx}')
+                        throw new AnnotatedError('INVALID_TX_OUTPOINT', 'Detect spending Coinbase Tx @ ${tx_idx}')  // Block Validation 8.
                     }
                 }
             }
         })
+
+        // check for 9b
+        if (coinbaseTx_value != null) {
+            for (const tx of transactions) {
+                var rewards_this_tx = await Promise.all(
+                    tx.inputs.map(async (input, input_idx) => {
+                        const prevOutput = await input.outpoint.resolve()
+                        return prevOutput.value
+                }))
+                let sumInputs = 0
+                let sumOutputs = 0
+                for (const inputValue of rewards_this_tx) {
+                    sumInputs += inputValue
+                }
+                for (const output of tx.outputs) {
+                    sumOutputs += output.value
+                }
+                let fee = sumInputs - sumOutputs
+                total_reward += fee
+            }
+            if (total_reward < coinbaseTx_value) {
+                throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Not observing Law of Conservation in the block.`)
+            }
+        }
     }
 
     async resolve(transactions: ObjectId[]) {
