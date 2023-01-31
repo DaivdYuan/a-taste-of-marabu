@@ -133,11 +133,8 @@ export class Block {
     }
 
     async validate(){
-        // TODO validate block
 
-        // here to validate basics of the block
-        // your code here...
-
+        // validate Block
         if (this.T != "00000000abc00000000000000000000000000000000000000000000000000000") {
             throw new AnnotatedError('INVALID_FORMAT', `Target isn't set to ...00abc00...`)
         }

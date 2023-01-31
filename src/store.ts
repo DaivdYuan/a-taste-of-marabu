@@ -60,7 +60,7 @@ export class ObjectStorage {
       },
       async (object) => { //block
         const block = Block.fromNetworkObject(object)
-        await block.validate() //TODO: implement
+        await block.validate()
       }
     )
   }
