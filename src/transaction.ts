@@ -7,6 +7,7 @@ import { AnnotatedError,
          SpendingTransactionObject } from './message'
 import { PublicKey, Signature, ver } from './crypto/signature'
 import { canonicalize } from 'json-canonicalize'
+import {PK} from './message'
 
 export class Output {
   pubkey: PublicKey
@@ -119,7 +120,15 @@ export class Transaction {
     const unsignedTxStr = canonicalize(this.toNetworkObject(false))
 
     if (this.inputs.length == 0) {
-      // assume all coinbases are valid for now
+      if (this.outputs.length != 1) {
+        throw new AnnotatedError('INVALID_FORMAT', "Coinbase tx's output length should be 1")
+      }
+      if (this.height == null) {
+        throw new AnnotatedError('INVALID_FORMAT', "Coinbase tx's height missing")
+      }
+      if (!PK.guard(this.outputs[0].pubkey)) {
+        throw new AnnotatedError('INVALID_FORMAT', "Coinbase tx's pubkey is mal formatted")
+      }
       return
     }
 

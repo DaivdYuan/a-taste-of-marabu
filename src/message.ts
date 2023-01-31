@@ -5,7 +5,7 @@ import { Literal,
 
 const Hash = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
 const Sig = String.withConstraint(s => /^[0-9a-f]{128}$/.test(s))
-const PK = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
+export const PK = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
 const NonNegative = Number.withConstraint(n => n >= 0)
 const Coins = NonNegative
 

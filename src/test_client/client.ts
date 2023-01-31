@@ -6,6 +6,10 @@ import * as Messages_solution from "../message"
 import { logger } from '../logger';
 import * as ed from '@noble/ed25519';
 import { ObjectStorage } from '../store';
+import { Literal,
+    Record, Array, Union,
+    String, Number,
+    Static, Null, Unknown, Optional } from 'runtypes'
 
 const SERVER_HOST = '149.28.200.131';
 //const SERVER_HOST = '0.0.0.0';
