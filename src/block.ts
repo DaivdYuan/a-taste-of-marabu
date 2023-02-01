@@ -46,6 +46,7 @@ export class Block {
         // check for 9b
         if (coinbaseTx_value != null) {
             for (const tx of transactions) {
+                if (tx.height != null) continue;
                 var rewards_this_tx = await Promise.all(
                     tx.inputs.map(async (input, input_idx) => {
                         const prevOutput = await input.outpoint.resolve()
@@ -63,6 +64,7 @@ export class Block {
                 total_reward += fee
             }
             if (total_reward < coinbaseTx_value) {
+                console.info(`total_reward: ${total_reward}, coinbaseTx_value: ${coinbaseTx_value}`)
                 throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Not observing Law of Conservation in the block.`)
             }
         }
@@ -133,7 +135,7 @@ export class Block {
     }
 
     async validate(){
-
+        console.log("Validating Block")
         // validate Block
         if (this.T != "00000000abc00000000000000000000000000000000000000000000000000000") {
             throw new AnnotatedError('INVALID_FORMAT', `Target isn't set to ...00abc00...`)
@@ -148,15 +150,14 @@ export class Block {
                 const curr_tx = Transaction.fromNetworkObject(await ObjectStorage.get(tx))
                 transactions_arr.push(curr_tx)
                 await curr_tx.validate()
-            }
-            catch (e: any) {
+            } catch (e: any) {
                 throw new AnnotatedError('UNFINDABLE_OBJECT', `Transaction invalid: id-${tx}.`)
             }
         }
         await this.resolveCoinbase(transactions_arr)
 
         // validate UTXO
-        UTXOManager.extendUTXO(this.objectid)
+        await UTXOManager.extendUTXO(this)
 
     }
 }

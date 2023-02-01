@@ -166,12 +166,6 @@ export class Peer {
 
     this.info(`Received object with id ${objectid}: %o`, msg.object)
 
-    if (await ObjectStorage.exists(objectid)) {
-      this.debug(`Object with id ${objectid} is already known`)
-      return
-    }
-    this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
-
     try {
       await ObjectStorage.validate(msg.object)
     }
@@ -180,7 +174,12 @@ export class Peer {
       return
     }
 
-    await ObjectStorage.put(msg.object)
+    if (await ObjectStorage.exists(objectid)) {
+      this.debug(`Object with id ${objectid} is already known`)
+    } else {
+      this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
+      await ObjectStorage.put(msg.object)
+    }
 
     // gossip
     network.broadcast({

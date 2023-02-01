@@ -1,3 +1,8 @@
+# local db
+db
+src/db
+src/test_client/db
+
 # Logs
 logs
 *.log

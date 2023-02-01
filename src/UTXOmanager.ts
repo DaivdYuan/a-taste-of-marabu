@@ -4,20 +4,18 @@ import { Transaction } from "./transaction"
 import { AnnotatedError } from "./message"
 
 export class UTXO {
-    lastBlockid: ObjectId | null = null
-
-    async getCurrentSet() {
-        return UTXO.getUTXObyId(this.lastBlockid)
-    }
-
-    async extendUTXO(blockid: ObjectId): Promise<string[]> {
-        const block = await Block.byId(blockid)
-        if (block.previousBlock !== this.lastBlockid) {
-            console.log("Not extending on the last block")
+    async extendUTXO(block: Block): Promise<string[]> {
+        const blockid = block.objectid
+        console.log("Extending UTXO set with block %s", blockid)
+        if (!await UTXO.existUTXObyId(block.previousBlock)) {
+            console.info("Previous block %s is not in the UTXO set", block.previousBlock)
             return []
         }
-        await block.validate()
-        let newUTXO = await UTXO.getUTXObyId(this.lastBlockid)
+        if (await UTXO.existUTXObyId(blockid)) {
+            console.info("Block %s is already in the UTXO set", blockid)
+            return []
+        }
+        let newUTXO = await UTXO.getUTXObyId(block.previousBlock)
         for (const txid of block.transactions) {
             const tx = await Transaction.byId(txid)
             await tx.validate()
@@ -33,8 +31,7 @@ export class UTXO {
             }
             newUTXO.push(txid)
         }
-        this.lastBlockid = blockid
-        ObjectStorage.putUTXO(this.lastBlockid, newUTXO)
+        ObjectStorage.putUTXO(blockid, newUTXO)
         return newUTXO
     }
 
@@ -44,6 +41,13 @@ export class UTXO {
             return []
         }
         return await ObjectStorage.getUTXO(blockid)
+    }
+
+    static async existUTXObyId(blockid: ObjectId | null): Promise<boolean> {
+        if (blockid === null) {
+            return true
+        }
+        return await ObjectStorage.existUTXO(blockid)
     }
 }
 export const UTXOManager = new UTXO()
