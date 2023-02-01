@@ -628,3 +628,65 @@ function test_POW() {
 }
 
 test_POW()
+
+//test blockchain
+
+function test_blockchain() {
+    var genesis_object =  {
+        "type": "object",
+        "object": {
+            "T": "00000000abc00000000000000000000000000000000000000000000000000000",
+            "created": 1671062400,
+            "miner": "Marabu",
+            "nonce": "000000000000000000000000000000000000000000000000000000021bea03ed",
+            "note": "The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers",
+            "previd": null,
+            "txids": [],
+            "type": "block"
+        }
+    }
+
+    var spend_genesis = {
+        "type": "object",
+        "object": {
+            "T": "00000000abc00000000000000000000000000000000000000000000000000000",
+            "created": 1671148800,
+            "miner": "Marabu Bounty Hunter",
+            "nonce": "15551b5116783ace79cf19d95cca707a94f48e4cc69f3db32f41081dab3e6641",
+            "note": "First block on genesis, 50 bu reward",
+            "previd": "0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2",
+            "txids": [
+                "8265faf623dfbcb17528fcd2e67fdf78de791ed4c7c60480e8cd21c6cdc8bcd4"
+            ],
+            "type": "block"
+        }
+    }
+
+    var tx = {
+        "type": "transaction",
+        "height": 1,
+        "outputs": [{
+            "pubkey": "daa520a25ccde0adad74134f2be50e6b55b526b1a4de42d8032abf7649d14bfc",
+            "value": 50000000000000
+        }]
+    }
+
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test objects")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(genesis_object) + '\n');
+        await delay(1000);
+        client.write(canonicalize(spend_genesis) + '\n');
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+    })
+}
+
+test_blockchain()
