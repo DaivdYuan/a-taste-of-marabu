@@ -1,7 +1,7 @@
 import { Literal,
          Record, Array, Union,
          String, Number,
-         Static, Null, Unknown, Optional } from 'runtypes'
+         Static, Null } from 'runtypes'
 
 const Hash = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
 const Sig = String.withConstraint(s => /^[0-9a-f]{128}$/.test(s))

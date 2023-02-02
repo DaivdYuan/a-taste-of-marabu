@@ -46,7 +46,7 @@ class Network {
 }
 
 export class MessageSocket extends EventEmitter {
-  buffer: string = '' // defragmentation buffer
+  buffer = '' // defragmentation buffer
   netSocket: net.Socket
   peerAddr: string
   timeout: NodeJS.Timeout | undefined

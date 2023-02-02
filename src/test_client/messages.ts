@@ -20,10 +20,10 @@ export class HelloMessage implements MessageTemplate{
     readonly agent: string = "Marabu-Core Client 0.9";
     get json(): string{
         return canonicalize(this);
-    };
+    }
 
     static isValidHello(msg: HelloMessage): boolean{
-        var keys = Object.keys(msg);
+        const keys = Object.keys(msg);
         if (keys.length !== 3) return false;
         if (!(keys.includes("type") && keys.includes("version") && keys.includes("agent"))) return false;
         if (msg.type !== "hello") return false;
@@ -84,7 +84,7 @@ export const Errors: [string,string][] = [
     ["INVALID_GENESIS", "The block has a previd of null but it isn't genesis."]
 ]
 
-export var ErrorMessageList: {[key: string]: ErrorMessage} = {};
+export const ErrorMessageList: {[key: string]: ErrorMessage} = {};
 Errors.forEach(
     (e: [string, string], index) => 
     {ErrorMessageList[e[0]] = new ErrorMessage(e[0],e[1])}

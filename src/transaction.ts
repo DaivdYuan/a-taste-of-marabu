@@ -164,8 +164,8 @@ export class Transaction {
       input => input.toUnsigned().toNetworkObject()
     )
   }
-  toNetworkObject(signed: boolean = true): TransactionObjectType {
-    let outputObjs = this.outputs.map(output => output.toNetworkObject())
+  toNetworkObject(signed = true): TransactionObjectType {
+    const outputObjs = this.outputs.map(output => output.toNetworkObject())
 
     if (this.height !== null) {
       return {

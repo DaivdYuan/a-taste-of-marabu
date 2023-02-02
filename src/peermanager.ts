@@ -15,9 +15,7 @@ class PeerManager {
     try {
       this.knownPeers = new Set(await db.get('peers'))
       //remove 127.0.0.1
-      try{
-        this.knownPeers.delete('127.0.0.1:18018')
-      } catch(e) {}
+      this.knownPeers.delete('127.0.0.1:18018')
       logger.debug(`Loaded known peers: ${[...this.knownPeers]}`)
     }
     catch {

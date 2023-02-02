@@ -2,7 +2,7 @@ export type ObjectId = string
 
 import level from 'level-ts'
 import { canonicalize } from 'json-canonicalize'
-import { AnnotatedError, TransactionObject, ObjectType, ObjectTxOrBlock } from './message'
+import { AnnotatedError, ObjectType, ObjectTxOrBlock } from './message'
 import { Transaction } from './transaction'
 import { Block } from './block'
 import { logger } from './logger'

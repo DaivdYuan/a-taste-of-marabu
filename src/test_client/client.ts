@@ -16,7 +16,7 @@ const SERVER_HOST = '149.28.200.131';
 const SERVER_PORT = 18018;
 
 function test_POW() {
-    var genesis =  {
+    const genesis =  {
         "T": "00000000abc00000000000000000000000000000000000000000000000000000",
         "created": 1671062400,
         "miner": "Marabu",
@@ -27,7 +27,7 @@ function test_POW() {
         "type": "block"
       }
     
-    var spend_genesis = {
+    const spend_genesis = {
         "T": "00000000abc00000000000000000000000000000000000000000000000000000",
         "created": 1671148800,
         "miner": "Marabu Bounty Hunter",
@@ -40,7 +40,7 @@ function test_POW() {
         "type": "block"
     }
     
-    var tx = {
+    const tx = {
         "type": "transaction",
         "height": 1,
         "outputs": [{
@@ -49,7 +49,7 @@ function test_POW() {
         }]
     }
     
-    var T = "00000000abc00000000000000000000000000000000000000000000000000000"
+    const T = "00000000abc00000000000000000000000000000000000000000000000000000"
     console.log(ObjectStorage.id(genesis))
     console.log(ObjectStorage.id(spend_genesis))
     console.log(ObjectStorage.id(spend_genesis) < T)
@@ -60,7 +60,7 @@ function test_POW() {
 //test blockchain
 
 function test_blockchain() {
-    var genesis_object =  {
+    const genesis_object =  {
         "type": "object",
         "object": {
             "T": "00000000abc00000000000000000000000000000000000000000000000000000",
@@ -74,7 +74,7 @@ function test_blockchain() {
         }
     }
 
-    var spend_genesis_object = {
+    const spend_genesis_object = {
         "type": "object",
         "object": {
             "T": "00000000abc00000000000000000000000000000000000000000000000000000",
@@ -90,7 +90,7 @@ function test_blockchain() {
         }
     }
 
-    var tx_object = {
+    const tx_object = {
         "type":"object",
         "object": {
             "type": "transaction",
@@ -144,7 +144,7 @@ function test_invalid_block(invalid_block: any, contexts: any[] = []){
         await delay(1000);
         client.write(Messages.getPeersMessage.json + '\n');
         await delay(1000);
-        for (let context of contexts){
+        for (const context of contexts){
             client.write(canonicalize(context) + '\n');
             await delay(1000);
         }
@@ -155,12 +155,12 @@ function test_invalid_block(invalid_block: any, contexts: any[] = []){
     })
     client.on('data', (data) => {
         console.log(`Server sent: ${data}`);
-        let segments = data.toString().split('\n')
-        for (let segment of segments){
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
             if (segment.length == 0){
                 continue
             }
-            let parsed = JSON.parse(segment)
+            const parsed = JSON.parse(segment)
             if (parsed.type == "error") {
                 client.destroy()
             }

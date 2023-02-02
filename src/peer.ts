@@ -18,9 +18,9 @@ const VERSION = '0.9.0'
 const NAME = 'Malibu (pset2)'
 
 export class Peer {
-  active: boolean = false
+  active = false
   socket: MessageSocket
-  handshakeCompleted: boolean = false
+  handshakeCompleted = false
 
   async sendHello() {
     this.sendMessage({
@@ -40,13 +40,13 @@ export class Peer {
       peers: [...peerManager.knownPeers]
     })
   }
-  async sendIHaveObject(obj: any) {
+  async sendIHaveObject(obj: IHaveObjectMessageType) {
     this.sendMessage({
       type: 'ihaveobject',
       objectid: ObjectStorage.id(obj)
     })
   }
-  async sendObject(obj: any) {
+  async sendObject(obj: ObjectMessageType) {
     this.sendMessage({
       type: 'object',
       object: obj

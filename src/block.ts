@@ -1,9 +1,9 @@
 import { ObjectId, ObjectStorage } from "./store";
-import { AnnotatedError, BlockObjectType, TransactionInputObjectType, TransactionObjectType, TransactionOutputObjectType, OutpointObjectType, SpendingTransactionObject } from "./message";
+import { AnnotatedError, BlockObjectType} from "./message";
 import { UTXOManager } from "./UTXOmanager";
 import { network } from './network'
 import { Transaction } from './transaction'
-import delay from 'delay';
+import delay = require("delay")
 
 const TIMEOUT_DELAY = 10000
 const BLOCK_REWARD = 50 * (10**12)
@@ -15,14 +15,14 @@ export class Block {
     nonce: string
     created: number
     T: string
-    miner: string = ""
-    note: string = ""
+    miner = ""
+    note = ""
 
     // checking two things here: Block Validation 7. & 8. & 9b
     async resolveCoinbase(transactions: Transaction[]) {
-        var coinbaseTx_hash: string | null = null;
-        var coinbaseTx_value: number | null = null;
-        var total_reward: number = BLOCK_REWARD;
+        let coinbaseTx_hash: string | null = null;
+        let coinbaseTx_value: number | null = null;
+        let total_reward: number = BLOCK_REWARD;
         transactions.forEach((tx, tx_idx) => {
             if (tx.height != null) { // this is a coinbase tx
                 if (tx_idx != 0) {
@@ -33,7 +33,7 @@ export class Block {
                 }
             } else { // this is a normal transaction
                 if (coinbaseTx_hash != null) {
-                    var spend_tx_hashes = tx.inputs.map((input, input_idx)=>{
+                    const spend_tx_hashes = tx.inputs.map((input, _ )=>{
                         return input.outpoint.txid
                     })
                     if (spend_tx_hashes.includes(coinbaseTx_hash)) {
@@ -47,8 +47,8 @@ export class Block {
         if (coinbaseTx_value != null) {
             for (const tx of transactions) {
                 if (tx.height != null) continue;
-                var rewards_this_tx = await Promise.all(
-                    tx.inputs.map(async (input, input_idx) => {
+                const rewards_this_tx = await Promise.all(
+                    tx.inputs.map(async (input, _ ) => {
                         const prevOutput = await input.outpoint.resolve()
                         return prevOutput.value
                 }))
@@ -60,7 +60,7 @@ export class Block {
                 for (const output of tx.outputs) {
                     sumOutputs += output.value
                 }
-                let fee = sumInputs - sumOutputs
+                const fee = sumInputs - sumOutputs
                 total_reward += fee
             }
             if (total_reward < coinbaseTx_value) {
@@ -83,7 +83,7 @@ export class Block {
                 return present
             })
         )
-        var missing_tx: string[] = [];
+        const missing_tx: string[] = [];
         transactions_present.forEach((has_tx_id, tx_idx) => {
             if (!has_tx_id) {
                 missing_tx.push(transactions[tx_idx])
@@ -123,7 +123,7 @@ export class Block {
         return this.fromNetworkObject(await ObjectStorage.get(blockid));
     }
 
-    constructor(objectid: ObjectId, previousBlock: ObjectId | null, transactions: ObjectId[], nonce: string, created: number, T: string, miner: string = "", note: string = "") {
+    constructor(objectid: ObjectId, previousBlock: ObjectId | null, transactions: ObjectId[], nonce: string, created: number, T: string, miner = "", note = "") {
         this.objectid = objectid
         this.previousBlock = previousBlock
         this.transactions = transactions
@@ -144,7 +144,7 @@ export class Block {
             throw new AnnotatedError('INVALID_BLOCK_POW', `Block ID isn't below target.`)
         }
         await this.resolve(this.transactions)
-        var transactions_arr: Transaction[] = [];
+        const transactions_arr: Transaction[] = [];
         for (const tx of this.transactions){
             try {
                 const curr_tx = Transaction.fromNetworkObject(await ObjectStorage.get(tx))
