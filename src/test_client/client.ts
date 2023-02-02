@@ -11,8 +11,8 @@ import { Literal,
     String, Number,
     Static, Null, Unknown, Optional } from 'runtypes'
 
-//const SERVER_HOST = '149.28.200.131';
-const SERVER_HOST = '0.0.0.0';
+const SERVER_HOST = '149.28.200.131';
+//const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 function test_POW() {
