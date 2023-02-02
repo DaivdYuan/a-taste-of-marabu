@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npx ts-node src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "nose2 -v"
   },
   "author": "Dionysis Zindros",
   "license": "MIT",

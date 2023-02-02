@@ -1,0 +1,276 @@
+Testcase: Must validate and store valid block.
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671062400,"miner":"Marabu","nonce":"000000000000000000000000000000000000000000000000000000021bea03ed","note":"The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers","previd":null,"txids":[],"type":"block"},"type":"object"}
+
+Grader received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader received message: {"type":"getpeers"}
+
+Sending message: {"objectid":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","type":"getobject"}
+
+Grader received message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671062400,"miner":"Marabu","nonce":"000000000000000000000000000000000000000000000000000000021bea03ed","note":"The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers","previd":null,"txids":[],"type":"block"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671148800,"miner":"grader","nonce":"1000000000000000000000000000000000000000000000000000000001aaf999","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["6ebfb4c8e8e9b19dcf54c6ce3e1e143da1f473ea986e70c5cb8899a4671c933a"],"type":"block"},"type":"object"}
+
+Waiting for node to request for transactions ...
+Sending message: {"objectid":"0000000093a2820d67495ac01ad38f74eabd8966517ab15c1cb3f2df1c71eea6","type":"getobject"}
+
+Grader received message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671148800,"miner":"grader","nonce":"1000000000000000000000000000000000000000000000000000000001aaf999","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["6ebfb4c8e8e9b19dcf54c6ce3e1e143da1f473ea986e70c5cb8899a4671c933a"],"type":"block"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671280061,"miner":"grader","nonce":"200000000000000000000000000000000000000000000000000000000b2c14c5","note":"This block has another coinbase and spends earlier coinbase","previd":"0000000093a2820d67495ac01ad38f74eabd8966517ab15c1cb3f2df1c71eea6","txids":["ddfc138d25e79eb59be0ad0d485f70d7f8180efb56e2afba4c401bb36bd749ec","8b3e362a7265c33dfbbd67e1eeeaaaf26ccdcc02aeb0c17ee417f8310641903e"],"type":"block"},"type":"object"}
+
+Waiting for node to request for transactions ...
+Grader received message: {"objectid":"0000000043e019834458a74a3334da6e2bd1c57e773e6440a6242a04ca04d94d","type":"ihaveobject"}
+
+Sending message: {"objectid":"0000000043e019834458a74a3334da6e2bd1c57e773e6440a6242a04ca04d94d","type":"getobject"}
+
+Grader received message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671280061,"miner":"grader","nonce":"200000000000000000000000000000000000000000000000000000000b2c14c5","note":"This block has another coinbase and spends earlier coinbase","previd":"0000000093a2820d67495ac01ad38f74eabd8966517ab15c1cb3f2df1c71eea6","txids":["ddfc138d25e79eb59be0ad0d485f70d7f8180efb56e2afba4c401bb36bd749ec","8b3e362a7265c33dfbbd67e1eeeaaaf26ccdcc02aeb0c17ee417f8310641903e"],"type":"block"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+POINTS SO FAR: 6
+
+Testcase: Send error message and do not gossip invalid block.
+Block has incorrect target
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"0f00000000000000000000000000000000000000000000000000000000000000","created":1671355937,"miner":"grader","nonce":"1000000000000000000000000000000000000000000000000000000000000000","note":"Block with incorrect target","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+FAIL: Did not receive an INVALID_FORMAT error message in time (0 points)
+
+PASS: Did not gossip an invalid block (1 points)
+
+POINTS SO FAR: 7
+
+Testcase: Send error message and do not gossip invalid block.
+Block has invalid proof-of-work
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671356958,"miner":"grader","nonce":"00000000000000000000000000000000000000000000000000000000012baaaa","note":"Block with invalid PoW","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Grader 1 received message: {"objectid":"dc21f9677c52bb7e63dad91f11bc4d3334e74a68a80cc9835319d06e8dfd0274","type":"ihaveobject"}
+
+Grader 2 received message: {"objectid":"dc21f9677c52bb7e63dad91f11bc4d3334e74a68a80cc9835319d06e8dfd0274","type":"ihaveobject"}
+
+FAIL: Did not receive an INVALID_BLOCK_POW error message in time (0 points)
+
+FAIL: Gossiped an invalid block (0 points)
+
+POINTS SO FAR: 7
+
+Testcase: Send error message and do not gossip invalid block.
+Block does not satisfy coinbase law of conservation
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671469958,"miner":"grader","nonce":"5000000000000000000000000000000000000000000000000000000012c667a8","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff"],"type":"block"},"type":"object"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Sending message: {"objectid":"0000000087aa358369304cf750fddfccf6d66fe04344d090b27af51213c1b5c0","type":"getobject"}
+
+Grader 1 received message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671469958,"miner":"grader","nonce":"5000000000000000000000000000000000000000000000000000000012c667a8","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff"],"type":"block"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671470413,"miner":"grader","nonce":"100000000000000000000000000000000000000000000000000000000c6bccff","note":"This block violates the law of conservation","previd":"0000000087aa358369304cf750fddfccf6d66fe04344d090b27af51213c1b5c0","txids":["5511abce2e64f90da983b2a103623e49c49aa6f62706be0b59ab47306c965db4","e2095e1c75a0950c1d699287b15ba976ba39c8d0989c4c6c2457c38a9bb6330c"],"type":"block"},"type":"object"}
+
+Grader 2 received message: {"objectid":"00000000a6bb0c09c235ba2a2d76a32c49371d93a986e3715f463084bcdf1992","type":"ihaveobject"}
+
+Grader 1 received message: {"objectid":"00000000a6bb0c09c235ba2a2d76a32c49371d93a986e3715f463084bcdf1992","type":"ihaveobject"}
+
+FAIL: Did not receive an INVALID_BLOCK_COINBASE error message in time (0 points)
+
+FAIL: Gossiped an invalid block (0 points)
+
+POINTS SO FAR: 9
+
+Testcase: Send error message and do not gossip invalid block.
+Coinbase spent in the same block
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671499512,"miner":"grader","nonce":"400000000000000000000000000000000000000000000000000000003ba510f9","note":"This block has a transaction spending the coinbase","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff","e2095e1c75a0950c1d699287b15ba976ba39c8d0989c4c6c2457c38a9bb6330c"],"type":"block"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Grader 1 received message: {"objectid":"0000000065b315b7ed26e3bf0d8a787e0bdad2bc511051590713b575979e7748","type":"ihaveobject"}
+
+Grader 2 received message: {"objectid":"0000000065b315b7ed26e3bf0d8a787e0bdad2bc511051590713b575979e7748","type":"ihaveobject"}
+
+FAIL: Did not receive an INVALID_TX_OUTPOINT error message in time (0 points)
+
+FAIL: Gossiped an invalid block (0 points)
+
+POINTS SO FAR: 9
+
+Testcase: Send error message and do not gossip invalid block.
+Invalid transaction (with null signature) in block
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671550512,"miner":"grader","nonce":"600000000000000000000000000000000000000000000000000000000c1ac6bc","note":"This block contains an invalid transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff","fe5ee59b947633b0d36e098648d5fe660675a58eae6952db04ac79e06fb6737c"],"type":"block"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Grader 1 received message: {"objectid":"000000009873779fb51fbdea6c0eb50dd21472cb46f2be7b97e3e971a77cde16","type":"ihaveobject"}
+
+Grader 2 received message: {"objectid":"000000009873779fb51fbdea6c0eb50dd21472cb46f2be7b97e3e971a77cde16","type":"ihaveobject"}
+
+FAIL: Did not receive an UNFINDABLE_OBJECT error message in time (0 points)
+
+FAIL: Gossiped an invalid block (0 points)
+
+POINTS SO FAR: 9
+
+Testcase: Send error message and do not gossip invalid block.
+Block with two coinbase transactions
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671570824,"miner":"grader","nonce":"100000000000000000000000000000000000000000000000000000001d69ea34","note":"This block has 2 coinbase transactions","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff","85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff"],"type":"block"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Grader 1 received message: {"objectid":"000000000ce3a26d3de2aff54e4b3ec18fcdb165d810efba1348bf15b62df9c5","type":"ihaveobject"}
+
+Grader 2 received message: {"objectid":"000000000ce3a26d3de2aff54e4b3ec18fcdb165d810efba1348bf15b62df9c5","type":"ihaveobject"}
+
+FAIL: Did not receive an INVALID_BLOCK_COINBASE error message in time (0 points)
+
+FAIL: Gossiped an invalid block (0 points)
+
+POINTS SO FAR: 9
+
+Testcase: Send error message and do not gossip invalid block.
+Double spending within a block
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671590312,"miner":"grader","nonce":"100000000000000000000000000000000000000000000000000000000c0491a3","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["7d1ddab9e04e3ccb00ef390de7529a75635509ed20d64fc25080e4f7015d9e41"],"type":"block"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Sending message: {"objectid":"00000000a869eab8426edd28efe3c3ab6128af715d094b317124e763759ccf29","type":"getobject"}
+
+Grader 1 received message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671590312,"miner":"grader","nonce":"100000000000000000000000000000000000000000000000000000000c0491a3","note":"This block has a coinbase transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["7d1ddab9e04e3ccb00ef390de7529a75635509ed20d64fc25080e4f7015d9e41"],"type":"block"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671619268,"miner":"grader","nonce":"2000000000000000000000000000000000000000000000000000000046eb0310","note":"This block spends coinbase transaction twice","previd":"00000000a869eab8426edd28efe3c3ab6128af715d094b317124e763759ccf29","txids":["4f5f84ad663440bd8e57fef248be86289040503e9d1c6cb66332522b0edbf508","2c43a5adcd17fa394d1dfbef0078c6057c06a0f79ad70214f57b70cf64cf5da1"],"type":"block"},"type":"object"}
+
+FAIL: Did not receive an INVALID_TX_OUTPOINT error message in time (0 points)
+
+PASS: Did not gossip an invalid block (1 points)
+
+POINTS SO FAR: 12
+
+Testcase: Send error message and do not gossip invalid block.
+Block with transaction that spends UTXO that doesn't exist
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Grader successfully connected to IP address 149.28.200.131 on port 18018
+Sending message: {"agent":"Grader 1","type":"hello","version":"0.9.0"}
+
+Sending message: {"agent":"Grader 2","type":"hello","version":"0.9.0"}
+
+Grader 1 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Sending message: {"object":{"height":1,"outputs":[{"pubkey":"260270b6d9fdfcc6d4aed967915ef64d67973e98f9f2216981c603c967608806","value":50000000000000}],"type":"transaction"},"type":"object"}
+
+Grader 1 received message: {"type":"getpeers"}
+
+Grader 2 received message: {"agent":"Malibu (pset2)","type":"hello","version":"0.9.0"}
+
+Grader 2 received message: {"type":"getpeers"}
+
+Sending message: {"objectid":"322cdf4e2efa5004a8ff2333bdd68d6be185a040d141737dbf4691184d8348d0","type":"getobject"}
+
+Grader 1 received message: {"object":{"height":1,"outputs":[{"pubkey":"260270b6d9fdfcc6d4aed967915ef64d67973e98f9f2216981c603c967608806","value":50000000000000}],"type":"transaction"},"type":"object"}
+
+PASS: Received the requested block in time (2 points)
+
+Sending message: {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671902581,"miner":"grader","nonce":"400000000000000000000000000000000000000000000000000000000ffc4942","note":"This block spends a coinbase transaction not in its prev blocks","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["ae75cdf0343674d8368222995ab33e687df8f6a1514fd4060864447de14abb77"],"type":"block"},"type":"object"}
+
+FAIL: Did not receive an INVALID_TX_OUTPOINT error message in time (0 points)
+
+PASS: Did not gossip an invalid block (1 points)
+
+POINTS SO FAR: 15
+
+Grading is done
+Achieved points: 15 / 28
