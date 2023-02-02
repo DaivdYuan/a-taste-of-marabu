@@ -10,7 +10,7 @@ const MAX_BUFFER_SIZE = 100 * 1024 // 100 kB
 class Network {
   peers: Peer[] = []
 
-  async init(bindPort: number, bindIP: string) {
+  async init(bindPort: number, bindIP: string, listen_only = false) {
     await peerManager.load()
 
     const server = net.createServer(socket => {
@@ -23,17 +23,21 @@ class Network {
     logger.info(`Listening for connections on port ${bindPort} and IP ${bindIP}`)
     server.listen(bindPort, bindIP)
 
-    for (const peerAddr of peerManager.knownPeers) {
-      logger.info(`Attempting connection to known peer ${peerAddr}`)
-      try {
-        const peer = new Peer(MessageSocket.createClient(peerAddr))
-        this.peers.push(peer)
-      }
-      catch (e: any) {
-        logger.warn(`Failed to create connection to peer ${peerAddr}: ${e.message}`)
+
+    if (!listen_only) {
+      for (const peerAddr of peerManager.knownPeers) {
+        logger.info(`Attempting connection to known peer ${peerAddr}`)
+        try {
+          const peer = new Peer(MessageSocket.createClient(peerAddr))
+          this.peers.push(peer)
+        }
+        catch (e: any) {
+          logger.warn(`Failed to create connection to peer ${peerAddr}: ${e.message}`)
+        }
       }
     }
   }
+
   broadcast(obj: object) {
     logger.info(`Broadcasting object to all peers: %o`, obj)
 

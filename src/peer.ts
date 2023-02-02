@@ -7,7 +7,8 @@ import { AnnotatedError,
          HelloMessageType,
          PeersMessageType, GetPeersMessageType,
          IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
-         ErrorMessageType } from './message'
+         ErrorMessageType, 
+         ObjectType} from './message'
 import { peerManager } from './peermanager'
 import { canonicalize } from 'json-canonicalize'
 import { db, ObjectStorage } from './store'
@@ -40,13 +41,13 @@ export class Peer {
       peers: [...peerManager.knownPeers]
     })
   }
-  async sendIHaveObject(obj: IHaveObjectMessageType) {
+  async sendIHaveObject(obj: ObjectType) {
     this.sendMessage({
       type: 'ihaveobject',
       objectid: ObjectStorage.id(obj)
     })
   }
-  async sendObject(obj: ObjectMessageType) {
+  async sendObject(obj: ObjectType) {
     this.sendMessage({
       type: 'object',
       object: obj

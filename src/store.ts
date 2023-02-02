@@ -7,8 +7,18 @@ import { Transaction } from './transaction'
 import { Block } from './block'
 import { logger } from './logger'
 import { hash } from './crypto/hash'
+import { TESTING_MODE } from './index'
+import { mkdtempSync } from 'fs'
+import { tmpdir } from 'os'
+import { sep } from 'path';
 
-export const db = new level('./db')
+let DB_PATH = './db'
+if (TESTING_MODE) {
+  DB_PATH = mkdtempSync(`${tmpdir}${sep}`)
+}
+
+logger.info(`SET DB PATH TO ${DB_PATH}`)
+export const db = new level(DB_PATH)
 
 export class ObjectStorage {
   static id(obj: any) {
