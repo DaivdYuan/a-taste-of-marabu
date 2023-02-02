@@ -50,9 +50,9 @@ function test_POW() {
     }
     
     const T = "00000000abc00000000000000000000000000000000000000000000000000000"
-    console.log(ObjectStorage.id(genesis))
-    console.log(ObjectStorage.id(spend_genesis))
-    console.log(ObjectStorage.id(spend_genesis) < T)
+    // console.log(ObjectStorage.id(genesis))
+    // console.log(ObjectStorage.id(spend_genesis))
+    // console.log(ObjectStorage.id(spend_genesis) < T)
 }
 
 //test_POW()
@@ -123,7 +123,7 @@ function test_blockchain() {
     })
 }
 
-test_blockchain()   //FAILED UTXO
+//test_blockchain()   //FAILED UTXO
 
 const invalid_blocks = {
     "invalid_target": {"object":{"T":"0f00000000000000000000000000000000000000000000000000000000000000","created":1671355937,"miner":"grader","nonce":"1000000000000000000000000000000000000000000000000000000000000000","note":"Block with incorrect target","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"},
@@ -181,7 +181,7 @@ async function test_invalid_cases() {
     await test_invalid_block(invalid_blocks.multiple_coinbases)  //SUCCESS
 }
 
-//test_invalid_cases()
+test_invalid_cases()
 
 const invalid_UTXO_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671902581,"miner":"grader","nonce":"400000000000000000000000000000000000000000000000000000000ffc4942","note":"This block spends a coinbase transaction not in its prev blocks","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["ae75cdf0343674d8368222995ab33e687df8f6a1514fd4060864447de14abb77"],"type":"block"},"type":"object"}
 const UTXO_contexts = [

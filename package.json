@@ -12,6 +12,7 @@
   "dependencies": {
     "@noble/ed25519": "^1.6.0",
     "@types/blake2": "^4.0.1",
+    "@types/node": "^17.0.23",
     "@types/semver": "^7.3.9",
     "blake2": "^4.1.1",
     "delay": "^5.0.0",

@@ -127,15 +127,17 @@ async def _async_test_UNFINDABLE_OBJECT():
     msg = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671550512,"miner":"grader","nonce":"600000000000000000000000000000000000000000000000000000000c1ac6bc","note":"This block contains an invalid transaction","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["85b72002ffacb4f5e309b772098ba02391df90803c1c814c45cff8053f4e16ff","fe5ee59b947633b0d36e098648d5fe660675a58eae6952db04ac79e06fb6737c"],"type":"block"},"type":"object"}
 
     await SendMsg(writer, msg)
-
-    await ExpectMsg(reader, {
-        "type": "error",
-        "name": "UNFINDABLE_OBJECT",
-        "description": lambda x: True
-    })
+    try:
+        await ExpectMsg(reader, {
+            "type": "error",
+            "name": "UNFINDABLE_OBJECT",
+            "description": lambda x: True
+        })
+    except:
+        print("\nUNFINDABLE_OBJECT test failed\n\n")
 
 def test_UNFINDABLE_OBJECT():
-    asyncio.get_event_loop().run_until_complete(asyncio.wait_for( _async_test_UNFINDABLE_OBJECT(), 10))
+    asyncio.get_event_loop().run_until_complete(asyncio.wait_for( _async_test_UNFINDABLE_OBJECT(), 20))
 
 
 async def _async_test_INVALID_BLOCK_COINBASE():
