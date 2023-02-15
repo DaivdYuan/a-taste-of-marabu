@@ -100,5 +100,5 @@
   },
   "include": [
     "src/"
-  ]
+, "deprecated/crypto", "deprecated/block.ts", "../pset3/src", "deprecated/block.ts"  ]
 }

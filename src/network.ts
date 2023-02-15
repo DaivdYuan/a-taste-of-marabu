@@ -10,12 +10,15 @@ const MAX_BUFFER_SIZE = 100 * 1024 // 100 kB
 class Network {
   peers: Peer[] = []
 
-  async init(bindPort: number, bindIP: string, listen_only = false) {
+  async init(bindPort: number, bindIP: string) {
     await peerManager.load()
 
     const server = net.createServer(socket => {
       logger.info(`New connection from peer ${socket.remoteAddress}`)
-      const peer = new Peer(new MessageSocket(socket, `${socket.remoteAddress}:${socket.remotePort}`))
+      const peer = new Peer(
+        new MessageSocket(socket, `${socket.remoteAddress}:${socket.remotePort}`),
+        `${socket.remoteAddress}:${socket.remotePort}`
+      )
       this.peers.push(peer)
       peer.onConnect()
     })
@@ -23,21 +26,20 @@ class Network {
     logger.info(`Listening for connections on port ${bindPort} and IP ${bindIP}`)
     server.listen(bindPort, bindIP)
 
-
-    if (!listen_only) {
-      for (const peerAddr of peerManager.knownPeers) {
-        logger.info(`Attempting connection to known peer ${peerAddr}`)
-        try {
-          const peer = new Peer(MessageSocket.createClient(peerAddr))
-          this.peers.push(peer)
-        }
-        catch (e: any) {
-          logger.warn(`Failed to create connection to peer ${peerAddr}: ${e.message}`)
-        }
+    for (const peerAddr of peerManager.knownPeers) {
+      logger.info(`Attempting connection to known peer ${peerAddr}`)
+      try {
+        const peer = new Peer(
+          MessageSocket.createClient(peerAddr),
+          peerAddr
+        )
+        this.peers.push(peer)
+      }
+      catch (e: any) {
+        logger.warn(`Failed to create connection to peer ${peerAddr}: ${e.message}`)
       }
     }
   }
-
   broadcast(obj: object) {
     logger.info(`Broadcasting object to all peers: %o`, obj)
 
@@ -50,7 +52,7 @@ class Network {
 }
 
 export class MessageSocket extends EventEmitter {
-  buffer = '' // defragmentation buffer
+  buffer: string = '' // defragmentation buffer
   netSocket: net.Socket
   peerAddr: string
   timeout: NodeJS.Timeout | undefined

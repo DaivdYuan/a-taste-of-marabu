@@ -3,6 +3,9 @@ db
 src/db
 src/test_client/db
 
+#deprecated
+deprecated
+
 # Logs
 logs
 *.log
