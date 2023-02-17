@@ -138,6 +138,9 @@ export class Transaction {
         if (idx > 0) {
           throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase transaction ${this.txid} must be the first in block.`)
         }
+        if (this.height !== await block.getHeight()){
+          throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase transaction ${this.txid} has invalid height.`)
+        }
       }
       this.fees = 0
       return

@@ -119,6 +119,31 @@ export class Block {
   isGenesis(): boolean {
     return this.previd === null
   }
+  async getHeight(): Promise<number> {
+    if (this.isGenesis()) {
+      return 0
+    }
+    if (await db.exists(`block_height:${this.blockid}`)) {
+      return await db.get(`block_height:${this.blockid}`)
+    }
+    if (this.previd !== null) {
+      let height: number;
+      if (!await db.exists(`block_height:${this.previd}`)) {
+        const prevBlock = await objectManager.get(this.previd)
+        if (BlockObject.guard(prevBlock)) {
+          const block = await Block.fromNetworkObject(prevBlock)
+          height = await block.getHeight()
+        } else {
+          throw new Error('The block\'s previd is not a block')
+        }
+      } else {
+        height = await db.get(`block_height:${this.previd}`)
+      }
+      await db.put(`block_height:${this.blockid}`, height + 1)
+      return height + 1
+    }
+    throw new Error('The block\'s previd is null')
+  }
   async getTxs(peer?: Peer): Promise<Transaction[]> {
     const txPromises: Promise<ObjectType>[] = []
     let maybeTransactions: ObjectType[] = []
@@ -235,6 +260,7 @@ export class Block {
         // genesis state
         stateBefore = new UTXOSet(new Set<string>())
         logger.debug(`State before block ${this.blockid} is the genesis state`)
+        await db.put(`block_height:${this.blockid}`, 0)
       }
       else {
         parentBlock = await this.validateAncestry(peer)
@@ -242,6 +268,14 @@ export class Block {
         if (parentBlock === null) {
           throw new AnnotatedError('UNFINDABLE_OBJECT', `Parent block of block ${this.blockid} was null`)
         }
+        
+        // check timestamp
+        if (this.created < parentBlock.created || this.created > Date.now()) {
+          throw new AnnotatedError('INVALID_BLOCK_TIMESTAMP', `Block ${this.blockid} has an invalid timestamp`)
+        }
+
+        // save block height
+        await this.getHeight()
 
         // this block's starting state is the previous block's ending state
         stateBefore = await parentBlock.loadStateAfter()
