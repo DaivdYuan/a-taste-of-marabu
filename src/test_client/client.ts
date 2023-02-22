@@ -193,13 +193,18 @@ const UTXO_contexts = [
 
 
 
-
-const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671167448,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f48c13b24","note":"Third block","previd":"00000000352f19a602a15bcc6ae4e6aea59bb1a234962b3eb824d6819332c20c","txids":[],"type":"block"},"type":"object"}
-const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671115550,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f606ac350","note":"Second block","previd":"0000000074c9b18be5ed6527ab7a6b398d5842e32e2f7619f0ac5b9436e53a72","txids":[],"type":"block"},"type":"object"}
-const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671106902,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cff302e97","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
-const get_block =  {"objectid":"0000000023c53e573cd45fcd6294e75a9d7a5b26ac6f433aa2fd6944cfb7e5fe","type":"getobject"}
-
 function test_recursive_validation(){
+    // /// TEST 1
+    // const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671167448,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f48c13b24","note":"Third block","previd":"00000000352f19a602a15bcc6ae4e6aea59bb1a234962b3eb824d6819332c20c","txids":[],"type":"block"},"type":"object"}
+    // const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671115550,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f606ac350","note":"Second block","previd":"0000000074c9b18be5ed6527ab7a6b398d5842e32e2f7619f0ac5b9436e53a72","txids":[],"type":"block"},"type":"object"}
+    // const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671106902,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cff302e97","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+    // const get_block =  {"objectid":"0000000023c53e573cd45fcd6294e75a9d7a5b26ac6f433aa2fd6944cfb7e5fe","type":"getobject"}
+
+    /// TEST 2
+    const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671189685,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cb913784f1","note":"Third block","previd":"000000001e5f347b48a75eb0b1e0a1602110b6cc8562953122784395efa9183f","txids":[],"type":"block"},"type":"object"}
+    const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671126331,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ceac8fae6","note":"Second block","previd":"000000008fc8222b6ed6be31071aa2221672617ba10a34837ff33e313bde93b7","txids":[],"type":"block"},"type":"object"}
+    const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cbfde60ca","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+    const get_block = {"objectid":"000000005671363d555e1975ec2efdb8e76dd0ea6c7f02f886bec194394399f4","type":"getobject"}
     const client = new net.Socket();
     console.log("--------------------------------");
     console.log("test recursive validation block")
@@ -239,4 +244,75 @@ function test_recursive_validation(){
 
 }
 
-test_recursive_validation();
+// test_recursive_validation();
+
+
+
+// ============= Testcase: Non-increasing timestamps =============
+
+function test_nonincreasing_timestamps(){
+    const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671185419,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cb96d5e3d4","note":"Second block","previd":"000000003594345d2ed18acd072c02d00925fbdffd91cb18e6e93de28eca4f24","txids":["549d3f85cdf6c7abfaee5ea962a65148ee79e54f491d42f233fc7be80217fa39","5b3a28a26992097c733b24ae9abe6788dda2cc005897c4e746e1985c138edc74"],"type":"block"},"type":"object"}
+    const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671185419,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cc37cab04","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["17a497c5e14bc2277d142bc0677c2a70d5452ec78fe7c1279cba1837f854bde1"],"type":"block"},"type":"object"}
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test timestamp")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(second_block) + '\n');
+        await delay(1000);
+        client.write(canonicalize(first_block) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent to client 1: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed to client 1\n\n');
+    })
+    const client_2 = new net.Socket();
+    client_2.connect({port: SERVER_PORT, host: SERVER_HOST}, async () => {
+        console.log('Connected to server.');
+        client_2.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client_2.write(Messages.getPeersMessage.json + '\n');
+        await delay(15000);
+        //close connection
+        client_2.destroy();
+    })
+    client_2.on('data', (data) => {
+        console.log(`Server sent to client 2: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client_2.destroy()
+            }
+        }
+    })
+    client_2.on('close', () => {
+        console.log('Connection closed to client 2\n\n');
+    })
+
+}
+
+test_nonincreasing_timestamps()
+
