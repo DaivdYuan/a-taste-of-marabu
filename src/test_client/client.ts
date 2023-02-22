@@ -5,14 +5,14 @@ import delay from 'delay';
 import * as Messages_solution from "../message"
 import { logger } from '../logger';
 import * as ed from '@noble/ed25519';
-import { ObjectStorage } from '../store';
+// import { objectManager } from '../object';
 import { Literal,
     Record, Array, Union,
     String, Number,
     Static, Null, Unknown, Optional } from 'runtypes'
 
-const SERVER_HOST = '149.28.200.131';
-//const SERVER_HOST = '0.0.0.0';
+// const SERVER_HOST = '149.28.200.131';
+const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
 function test_POW() {
@@ -50,12 +50,12 @@ function test_POW() {
     }
     
     const T = "00000000abc00000000000000000000000000000000000000000000000000000"
-    // console.log(ObjectStorage.id(genesis))
-    // console.log(ObjectStorage.id(spend_genesis))
-    // console.log(ObjectStorage.id(spend_genesis) < T)
+    // console.log(objectManager.id(genesis))
+    // console.log(objectManager.id(spend_genesis))
+    // console.log(objectManager.id(spend_genesis) < T)
 }
 
-//test_POW()
+// test_POW()
 
 //test blockchain
 
@@ -181,7 +181,7 @@ async function test_invalid_cases() {
     await test_invalid_block(invalid_blocks.multiple_coinbases)  //SUCCESS
 }
 
-test_invalid_cases()
+// test_invalid_cases()
 
 const invalid_UTXO_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671902581,"miner":"grader","nonce":"400000000000000000000000000000000000000000000000000000000ffc4942","note":"This block spends a coinbase transaction not in its prev blocks","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["ae75cdf0343674d8368222995ab33e687df8f6a1514fd4060864447de14abb77"],"type":"block"},"type":"object"}
 const UTXO_contexts = [
@@ -190,3 +190,53 @@ const UTXO_contexts = [
 ]
 
 //test_invalid_block(invalid_UTXO_block, UTXO_contexts) //SUCCESS
+
+
+
+
+const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671167448,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f48c13b24","note":"Third block","previd":"00000000352f19a602a15bcc6ae4e6aea59bb1a234962b3eb824d6819332c20c","txids":[],"type":"block"},"type":"object"}
+const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671115550,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f606ac350","note":"Second block","previd":"0000000074c9b18be5ed6527ab7a6b398d5842e32e2f7619f0ac5b9436e53a72","txids":[],"type":"block"},"type":"object"}
+const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671106902,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cff302e97","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+const get_block =  {"objectid":"0000000023c53e573cd45fcd6294e75a9d7a5b26ac6f433aa2fd6944cfb7e5fe","type":"getobject"}
+
+function test_recursive_validation(){
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test recursive validation block")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(third_block) + '\n');
+        await delay(1000);
+        client.write(canonicalize(second_block) + '\n');
+        await delay(1000);
+        client.write(canonicalize(first_block) + '\n');
+        await delay(1000);
+        client.write(canonicalize(get_block) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+
+}
+
+test_recursive_validation();
