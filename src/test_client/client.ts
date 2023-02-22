@@ -356,4 +356,39 @@ function test_invalid_genesis(){
 }
 
 
-test_invalid_genesis()
+// test_invalid_genesis()
+
+
+function get_tx_from_peers() {
+    const client = new net.Socket();
+    client.connect(18018, "45.63.84.226", async () => {
+        console.log('Connected to server.');
+        let tx_message = {"objectid":"8790187596c417cc41fe632bb1eaa779e0529dc256a37df9c531d012198a0b18","type":"getobject"}
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(tx_message) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+}
+
+get_tx_from_peers()
