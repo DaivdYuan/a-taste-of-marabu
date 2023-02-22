@@ -98,7 +98,7 @@ class ObjectManager {
     return object
   }
   constructor() {
-    const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
+    const TARGET = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
     const GENESIS: BlockObjectType = {
       T: TARGET,
       created: 1671062400,
@@ -109,6 +109,8 @@ class ObjectManager {
       txids: [],
       type: 'block'
     }
+    const GENESIS_id = this.id(GENESIS)
+    logger.debug(`GENESIS id is ${GENESIS_id}`)
     this.put(GENESIS)
   }
 }

@@ -9,7 +9,7 @@ import { UTXOSet } from './utxo'
 import { logger } from './logger'
 import { Transaction } from './transaction'
 
-const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
+const TARGET = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
 const GENESIS: BlockObjectType = {
   T: TARGET,
   created: 1671062400,
@@ -270,7 +270,8 @@ export class Block {
         }
         
         // check timestamp
-        if (this.created < parentBlock.created || this.created > Date.now()) {
+        logger.debug(`Checking timestamp for ${this.blockid}`)
+        if (this.created <= parentBlock.created || this.created > Date.now()) {
           throw new AnnotatedError('INVALID_BLOCK_TIMESTAMP', `Block ${this.blockid} has an invalid timestamp`)
         }
 
