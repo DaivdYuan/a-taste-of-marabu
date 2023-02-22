@@ -271,7 +271,7 @@ export class Block {
         
         // check timestamp
         logger.debug(`Checking timestamp for ${this.blockid}`)
-        if (this.created <= parentBlock.created || this.created > Date.now()) {
+        if (this.created <= parentBlock.created || this.created > Date.now() / 1000) {
           throw new AnnotatedError('INVALID_BLOCK_TIMESTAMP', `Block ${this.blockid} has an invalid timestamp`)
         }
 
