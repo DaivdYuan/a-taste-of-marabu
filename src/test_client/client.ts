@@ -321,7 +321,7 @@ function test_nonincreasing_timestamps(){
 // =================== Testcase: Invalid genesis ===================
 
 function test_invalid_genesis(){
-    const genesis_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671091830,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cbc61fe57f","note":"Incorrect genesis","previd":null,"txids":[],"type":"block"},"type":"object"}
+    const genesis_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671091830,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cbc61fe57f","note":"Incorrect genesis","previd":null,"txids":[],"type":"block"},"type":"object"}
     const client = new net.Socket();
     console.log("--------------------------------");
     console.log("test recursive validation block")
