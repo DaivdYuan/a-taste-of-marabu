@@ -9,7 +9,7 @@ import { UTXOSet } from './utxo'
 import { logger } from './logger'
 import { Transaction } from './transaction'
 
-const TARGET = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
 const GENESIS: BlockObjectType = {
   T: TARGET,
   created: 1671062400,
