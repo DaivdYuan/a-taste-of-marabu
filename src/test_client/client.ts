@@ -5,7 +5,7 @@ import delay from 'delay';
 import * as Messages_solution from "../message"
 import { logger } from '../logger';
 import * as ed from '@noble/ed25519';
-import { objectManager } from '../object';
+// import { objectManager } from '../object';
 import { Literal,
     Record, Array, Union,
     String, Number,
@@ -252,10 +252,7 @@ function test_recursive_validation(){
 
 function test_nonincreasing_timestamps(){
     const first_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cbfde60ca","note":"First block","previd":"086118919d79387cbccfc2820f4f27e01b4509b3b9738b82b1b7d452ca72d992","txids":[],"type":"block"},"type":"object"}
-    console.log(first_block.object)
-    console.log(Messages_solution.BlockObject.guard(first_block.object))
-    console.log(objectManager.id(first_block.object))
-    console.log(objectManager.id(canonicalize({"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cbfde60ca","note":"First block","previd":"086118919d79387cbccfc2820f4f27e01b4509b3b9738b82b1b7d452ca72d992","txids":[],"type":"block"})))
+    // console.log(objectManager.id(first_block.object))
     const second_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ceac8fae6","note":"Second block","previd":"aef13d1f8f73240665266d2ba1666ede7618bf58cbdf09a9a7bab85c17bbc692","txids":[],"type":"block"},"type":"object"}
     const client = new net.Socket();
     console.log("--------------------------------");
@@ -318,5 +315,45 @@ function test_nonincreasing_timestamps(){
 
 }
 
-test_nonincreasing_timestamps()
+// test_nonincreasing_timestamps()
 
+
+// =================== Testcase: Invalid genesis ===================
+
+function test_invalid_genesis(){
+    const genesis_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671091830,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cbc61fe57f","note":"Incorrect genesis","previd":null,"txids":[],"type":"block"},"type":"object"}
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test recursive validation block")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(genesis_block) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+
+}
+
+
+test_invalid_genesis()
