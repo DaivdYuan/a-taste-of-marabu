@@ -251,8 +251,9 @@ function test_recursive_validation(){
 // ============= Testcase: Non-increasing timestamps =============
 
 function test_nonincreasing_timestamps(){
-    const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671185419,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cb96d5e3d4","note":"Second block","previd":"000000003594345d2ed18acd072c02d00925fbdffd91cb18e6e93de28eca4f24","txids":["549d3f85cdf6c7abfaee5ea962a65148ee79e54f491d42f233fc7be80217fa39","5b3a28a26992097c733b24ae9abe6788dda2cc005897c4e746e1985c138edc74"],"type":"block"},"type":"object"}
-    const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671185419,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cc37cab04","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["17a497c5e14bc2277d142bc0677c2a70d5452ec78fe7c1279cba1837f854bde1"],"type":"block"},"type":"object"}
+    const first_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cbfde60ca","note":"First block","previd":"086118919d79387cbccfc2820f4f27e01b4509b3b9738b82b1b7d452ca72d992","txids":[],"type":"block"},"type":"object"}
+    // console.log(objectManager.id(first_block.object))
+    const second_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ceac8fae6","note":"Second block","previd":"aef13d1f8f73240665266d2ba1666ede7618bf58cbdf09a9a7bab85c17bbc692","txids":[],"type":"block"},"type":"object"}
     const client = new net.Socket();
     console.log("--------------------------------");
     console.log("test timestamp")
@@ -314,5 +315,80 @@ function test_nonincreasing_timestamps(){
 
 }
 
-test_nonincreasing_timestamps()
+// test_nonincreasing_timestamps()
 
+
+// =================== Testcase: Invalid genesis ===================
+
+function test_invalid_genesis(){
+    const genesis_block = {"object":{"T":"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","created":1671091830,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cbc61fe57f","note":"Incorrect genesis","previd":null,"txids":[],"type":"block"},"type":"object"}
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test recursive validation block")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(genesis_block) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+
+}
+
+
+// test_invalid_genesis()
+
+
+function get_tx_from_peers() {
+    const client = new net.Socket();
+    client.connect(18018, "45.63.84.226", async () => {
+        console.log('Connected to server.');
+        let tx_message = {"objectid":"8790187596c417cc41fe632bb1eaa779e0529dc256a37df9c531d012198a0b18","type":"getobject"}
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize(tx_message) + '\n');
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+}
+
+get_tx_from_peers()

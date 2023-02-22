@@ -109,6 +109,8 @@ class ObjectManager {
       txids: [],
       type: 'block'
     }
+    const GENESIS_id = this.id(GENESIS)
+    logger.debug(`GENESIS id is ${GENESIS_id}`)
     this.put(GENESIS)
   }
 }

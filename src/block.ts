@@ -254,7 +254,7 @@ export class Block {
 
       if (this.isGenesis()) {
         if (!util.isDeepStrictEqual(this.toNetworkObject(), GENESIS)) {
-          throw new AnnotatedError('INVALID_FORMAT', `Invalid genesis block ${this.blockid}: ${JSON.stringify(this.toNetworkObject())}`)
+          throw new AnnotatedError('INVALID_GENESIS', `Invalid genesis block ${this.blockid}: ${JSON.stringify(this.toNetworkObject())}`)
         }
         logger.debug(`Block ${this.blockid} is genesis block`)
         // genesis state
@@ -270,7 +270,8 @@ export class Block {
         }
         
         // check timestamp
-        if (this.created < parentBlock.created || this.created > Date.now()) {
+        logger.debug(`Checking timestamp for ${this.blockid}`)
+        if (this.created <= parentBlock.created || this.created > Date.now() / 1000) {
           throw new AnnotatedError('INVALID_BLOCK_TIMESTAMP', `Block ${this.blockid} has an invalid timestamp`)
         }
 

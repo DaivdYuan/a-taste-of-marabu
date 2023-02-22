@@ -19,7 +19,8 @@ const ErrorChoices = Union(
   Literal('INVALID_TX_CONSERVATION'),
   Literal('INVALID_BLOCK_COINBASE'),
   Literal('INVALID_BLOCK_TIMESTAMP'),
-  Literal('INVALID_BLOCK_POW')
+  Literal('INVALID_BLOCK_POW'),
+  Literal('INVALID_GENESIS')
 )
 
 export const ErrorMessage = Record({
