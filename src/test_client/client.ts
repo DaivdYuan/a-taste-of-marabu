@@ -493,6 +493,11 @@ function test_incorrect_height(){
 
 function test_longest_chain(){
 
+    const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671189685,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cb913784f1","note":"Third block","previd":"000000001e5f347b48a75eb0b1e0a1602110b6cc8562953122784395efa9183f","txids":[],"type":"block"},"type":"object"}
+    const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671126331,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ceac8fae6","note":"Second block","previd":"000000008fc8222b6ed6be31071aa2221672617ba10a34837ff33e313bde93b7","txids":[],"type":"block"},"type":"object"}
+    const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671110062,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875cbfde60ca","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+    const get_block = {"objectid":"000000005671363d555e1975ec2efdb8e76dd0ea6c7f02f886bec194394399f4","type":"getobject"}
+
     const chain_tip = {"blockid":"000000003e5e079059e48b50fd291c0d370d03b7ac29bfbd2d9e2cea67821aa6","type":"chaintip"}
     // blocks 7 to 1
     const blocks = [
@@ -519,23 +524,47 @@ function test_longest_chain(){
 
     const client = new net.Socket();
     console.log("--------------------------------");
-    console.log("test recursive validation block")
+    console.log("test longest chain")
     client.connect(SERVER_PORT, SERVER_HOST, async () => {
         console.log('Connected to server.');
         client.write(Messages.helloMessage.json + '\n');
         await delay(1000);
         client.write(Messages.getPeersMessage.json + '\n');
         await delay(1000);
+
+        client.write(`${canonicalize(third_block)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(third_block)}\n`)
+        await delay(1000);
+        client.write(`${canonicalize(second_block)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(second_block)}\n`)
+        await delay(1000);
+        client.write(`${canonicalize(first_block)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(first_block)}\n`)
+        await delay(1000);
+        client.write(`${canonicalize(get_block)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(get_block)}\n`)
+        await delay(1000);
+        client.write(`${canonicalize(get_chain_tip)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
+        await delay(1000);
+        // should return hash of third object
+
         client.write(`${canonicalize(chain_tip)}\n`)
         logger.debug(`client 1: sending ${canonicalize(chain_tip)}\n`)
+        await delay(1000);
+        // should return getobject with that object id
+
         for (const block of blocks) {
             client.write(canonicalize(block) + '\n');
             logger.debug(`client 1: sending ${canonicalize(block)}`)
             await delay(1000);
         }
+
         client.write(`${canonicalize(get_chain_tip)}\n`)
         logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
         await delay(1000);
+        // should return hash of block 7
+
         for (const get_block of get_blocks) {
             client.write(canonicalize(get_block) + '\n');
             logger.debug(`client 1: sending ${canonicalize(get_block)}`)
@@ -561,6 +590,9 @@ function test_longest_chain(){
     client.on('close', () => {
         console.log('Connection closed\n\n');
     })
+
+
+    // client 2 is used for monitoring broadcasting
     const client_2 = new net.Socket();
     client_2.connect({port: SERVER_PORT, host: SERVER_HOST}, async () => {
         console.log('Connected to server.');
