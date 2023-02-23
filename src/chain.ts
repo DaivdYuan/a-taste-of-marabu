@@ -2,7 +2,9 @@ import { Block } from "./block";
 import { logger } from "./logger";
 import { ObjectTxOrBlock, ObjectType,
     TransactionObjectType, BlockObjectType, AnnotatedError } from './message'
-    import { objectManager, ObjectId, db } from './object'
+import { objectManager } from './object'
+import { hash } from './crypto/hash'
+import { canonicalize } from 'json-canonicalize'
 
 class ChainManager { 
     longestChainHeight: number = 0
@@ -17,7 +19,7 @@ class ChainManager {
         if (height > this.longestChainHeight) {
             logger.debug(`New longest chain has height ${height} and tip ${block.blockid}`)
             this.longestChainHeight = height
-            this.longestChainTipHash = objectManager.id(block)
+            this.longestChainTipHash = objectManager.id(block.toNetworkObject())
         }
     }
 
@@ -33,7 +35,7 @@ class ChainManager {
           txids: [],
           type: 'block'
         }
-        this.longestChainTipHash = objectManager.id(GENESIS)
+        this.longestChainTipHash = hash(canonicalize(GENESIS))
     }
 }
 

@@ -526,13 +526,15 @@ function test_longest_chain(){
         await delay(1000);
         client.write(Messages.getPeersMessage.json + '\n');
         await delay(1000);
-        client.write(`${chain_tip}\n`)
+        client.write(`${canonicalize(chain_tip)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(chain_tip)}\n`)
         for (const block of blocks) {
             client.write(canonicalize(block) + '\n');
             logger.debug(`client 1: sending ${canonicalize(block)}`)
             await delay(1000);
         }
-        client.write(`${get_chain_tip}\n`)
+        client.write(`${canonicalize(get_chain_tip)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
         await delay(1000);
         for (const get_block of get_blocks) {
             client.write(canonicalize(get_block) + '\n');
