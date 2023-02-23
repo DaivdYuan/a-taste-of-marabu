@@ -505,7 +505,9 @@ function test_longest_chain(){
         {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671355893,"miner":"grader","nonce":"76931fac9dab2b36c248b87d6ae33f9a62d7183a5d5789e4b2d6b44251c0ce18","note":"Block 6","previd":"000000004e011bad33abfedaa4b32fdde6a39a57fa28e428f4f24843df223a1e","txids":[],"type":"block"},"type":"object"},
         {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671319174,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875d05eae29f","note":"Block 5","previd":"00000000211f42dca9d084f1aaf38d8fe8ef87c56958de83ead19891b43c437d","txids":[],"type":"block"},"type":"object"},
         {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671294586,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cc0d5fc2f4","note":"Block 4","previd":"00000000331ae5c93f9bf94c5b62bf7978b499549b8f6234d3b2743ffbd1bd58","txids":[],"type":"block"},"type":"object"},
-        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671212387,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f5d92de8e","note":"Block 3","previd":"0000000046fb03c2fcc7da4c5c1b208d64ec985595d14f60b669b106f5c3b8e7","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671212387,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f5d92de8e","note":"Block 3","previd":"0000000046fb03c2fcc7da4c5c1b208d64ec985595d14f60b669b106f5c3b8e7","txids":[],"type":"block"},"type":"object"}
+    ]
+    const previous_2_blocks = [
         {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671168572,"miner":"grader","nonce":"e51c9737903343947e02086541e4c48a99630aa9aece153843a4b190a053d95c","note":"Block 2","previd":"000000000f007c87b4924c8c9668c6bb10eaa8422daa4baa6eff766e114eb331","txids":[],"type":"block"},"type":"object"},
         {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671093685,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ce1504ce5","note":"Block 1","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
     ]
@@ -532,6 +534,21 @@ function test_longest_chain(){
         client.write(Messages.getPeersMessage.json + '\n');
         await delay(1000);
 
+        client.write(`${canonicalize(get_chain_tip)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
+        await delay(1000);
+        // should return genesis block
+
+        for (const block of previous_2_blocks) {
+            client.write(canonicalize(block) + '\n');
+            logger.debug(`client 1: sending ${canonicalize(block)}`)
+            await delay(1000);
+        }
+        client.write(`${canonicalize(get_chain_tip)}\n`)
+        logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
+        await delay(1000);
+        // should return hash of block 2
+
         client.write(`${canonicalize(third_block)}\n`)
         logger.debug(`client 1: sending ${canonicalize(third_block)}\n`)
         await delay(1000);
@@ -544,6 +561,7 @@ function test_longest_chain(){
         client.write(`${canonicalize(get_block)}\n`)
         logger.debug(`client 1: sending ${canonicalize(get_block)}\n`)
         await delay(1000);
+
         client.write(`${canonicalize(get_chain_tip)}\n`)
         logger.debug(`client 1: sending ${canonicalize(get_chain_tip)}\n`)
         await delay(1000);
