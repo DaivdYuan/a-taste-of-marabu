@@ -363,12 +363,19 @@ function get_tx_from_peers() {
     const client = new net.Socket();
     client.connect(18018, "45.63.84.226", async () => {
         console.log('Connected to server.');
-        let tx_message = {"objectid":"8790187596c417cc41fe632bb1eaa779e0529dc256a37df9c531d012198a0b18","type":"getobject"}
+        let tx_messages = [
+            {"objectid":"8790187596c417cc41fe632bb1eaa779e0529dc256a37df9c531d012198a0b18","type":"getobject"},
+            {"objectid":"36e2f567d8a144ae8cd55fffae636d747c7d1ed77f965c2ba7d5036f63c017dd","type":"getobject"},
+            {"objectid":"058d7388dc7410baacf71112bc3b1c2820c9c329edf6397093647c601ff84777","type":"getobject"},
+        ]
         client.write(Messages.helloMessage.json + '\n');
         await delay(1000);
         client.write(Messages.getPeersMessage.json + '\n');
         await delay(1000);
-        client.write(canonicalize(tx_message) + '\n');
+        for (const tx_message of tx_messages) {
+            client.write(canonicalize(tx_message) + '\n');
+            await delay(1000);
+        }
         await delay(15000);
         //close connection
         client.destroy();
@@ -391,4 +398,92 @@ function get_tx_from_peers() {
     })
 }
 
-get_tx_from_peers()
+// get_tx_from_peers()
+
+
+// ============= Testcase: Incorrect height coinbase =============
+
+
+function test_incorrect_height(){
+
+    /// TEST 1
+    const third_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671152671,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204efd6066e9","note":"Third block","previd":"000000003c333f6bfac73bf937bfe6966861dd93c2bc790b7e360427ee656aba","txids":["8790187596c417cc41fe632bb1eaa779e0529dc256a37df9c531d012198a0b18"],"type":"block"},"type":"object"}
+    const second_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671115165,"miner":"grader","nonce":"e51c9737903343947e02086541e4c48a99630aa9aece153843a4b1903f3964d0","note":"Second block","previd":"000000000bf5ed1ee86cb47cc81489f4eaadbb59802e7b65ad87e89dce825417","txids":["36e2f567d8a144ae8cd55fffae636d747c7d1ed77f965c2ba7d5036f63c017dd"],"type":"block"},"type":"object"}
+    const first_block = {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671107316,"miner":"grader","nonce":"e51c9737903343947e02086541e4c48a99630aa9aece153843a4b190447b3bae","note":"First block","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":["058d7388dc7410baacf71112bc3b1c2820c9c329edf6397093647c601ff84777"],"type":"block"},"type":"object"}
+    const tx_objects = [
+        {"object":{"height":4,"outputs":[{"pubkey":"bfd714d581342739b3f31542e87cebc48b645b3a96c9251bc1a9d1a0dda59b29","value":50000000000000}],"type":"transaction"},"type":"object"},
+        {"object":{"height":2,"outputs":[{"pubkey":"bfd714d581342739b3f31542e87cebc48b645b3a96c9251bc1a9d1a0dda59b29","value":50000000000000}],"type":"transaction"},"type":"object"},
+        {"object":{"height":1,"outputs":[{"pubkey":"bfd714d581342739b3f31542e87cebc48b645b3a96c9251bc1a9d1a0dda59b29","value":50000000000000}],"type":"transaction"},"type":"object"}
+    ]
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test recursive validation block")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        for (const tx_object of tx_objects) {
+            client.write(canonicalize(tx_object) + '\n');
+            logger.debug(`sending ${canonicalize(tx_object)}`)
+            await delay(1000);
+        }
+        client.write(canonicalize(third_block) + '\n');
+        logger.debug(`sending ${canonicalize(third_block)}`)
+        await delay(1000);
+        client.write(canonicalize(second_block) + '\n');
+        logger.debug(`sending ${canonicalize(second_block)}`)
+        await delay(1000);
+        client.write(canonicalize(first_block) + '\n');
+        logger.debug(`sending ${canonicalize(first_block)}`)
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+    const client_2 = new net.Socket();
+    client_2.connect({port: SERVER_PORT, host: SERVER_HOST}, async () => {
+        console.log('Connected to server.');
+        client_2.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client_2.write(Messages.getPeersMessage.json + '\n');
+        await delay(15000);
+        //close connection
+        client_2.destroy();
+    })
+    client_2.on('data', (data) => {
+        console.log(`Server sent to client 2: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client_2.destroy()
+            }
+        }
+    })
+    client_2.on('close', () => {
+        console.log('Connection closed to client 2\n\n');
+    })
+}
+
+
+test_incorrect_height()
