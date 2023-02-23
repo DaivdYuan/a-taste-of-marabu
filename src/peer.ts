@@ -157,10 +157,12 @@ export class Peer {
     )(msg)
   }
   async onMessageGetChainTip(msg: GetChainTipMessageType) {
-    // TBD
+    this.info(`Remote party is requesting chaintip. Sharing.`)
+    await this.sendChainTip()
   }
   async onMessageChainTip(msg: ChainTipMessageType) {
-    // TBD
+    this.info(`Remote party is reporting their chaintip. Requesting.`)
+    await this.sendGetObject(msg.blockid)
   }
   async onMessageHello(msg: HelloMessageType) {
     if (!semver.satisfies(msg.version, `^${VERSION}`)) {
