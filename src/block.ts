@@ -8,6 +8,7 @@ import util from 'util'
 import { UTXOSet } from './utxo'
 import { logger } from './logger'
 import { Transaction } from './transaction'
+import {chainManager} from './chain'
 
 const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
 const GENESIS: BlockObjectType = {
@@ -293,6 +294,8 @@ export class Block {
 
       await this.validateTx(peer, stateBefore)
       logger.debug(`Block ${this.blockid} has valid transactions`)
+
+      chainManager.onValidBlockArrival(this);
     }
     catch (e: any) {
       throw e

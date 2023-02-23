@@ -10,6 +10,7 @@ import { Messages,
          MessageType,
          HelloMessageType,
          PeersMessageType, GetPeersMessageType,
+         ChainTipMessageType, GetChainTipMessageType,
          IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
          ErrorMessageType,
          AnnotatedError
@@ -21,6 +22,7 @@ import { network } from './network'
 import { ObjectId } from './object'
 import { Block } from './block'
 import { Transaction } from './transaction'
+import {chainManager} from './chain'
 
 const VERSION = '0.9.0'
 const NAME = 'Malibu (pset3)'
@@ -44,6 +46,17 @@ export class Peer {
   async sendGetPeers() {
     this.sendMessage({
       type: 'getpeers'
+    })
+  }
+  async sendGetChainTip() { 
+    this.sendMessage({
+      type: 'getchaintip'
+    })
+  }
+  async sendChainTip() {
+    this.sendMessage({
+      type: 'chaintip',
+      blockid: chainManager.longestChainTipHash
     })
   }
   async sendPeers() {
@@ -97,6 +110,7 @@ export class Peer {
     this.active = true
     await this.sendHello()
     await this.sendGetPeers()
+    await this.sendGetChainTip()
   }
   async onTimeout() {
     return await this.fatalError(new AnnotatedError('INVALID_FORMAT', 'Timed out before message was complete'))
@@ -137,8 +151,16 @@ export class Peer {
       this.onMessageIHaveObject.bind(this),
       this.onMessageGetObject.bind(this),
       this.onMessageObject.bind(this),
-      this.onMessageError.bind(this)
+      this.onMessageError.bind(this),
+      this.onMessageGetChainTip.bind(this),
+      this.onMessageChainTip.bind(this)
     )(msg)
+  }
+  async onMessageGetChainTip(msg: GetChainTipMessageType) {
+    // TBD
+  }
+  async onMessageChainTip(msg: ChainTipMessageType) {
+    // TBD
   }
   async onMessageHello(msg: HelloMessageType) {
     if (!semver.satisfies(msg.version, `^${VERSION}`)) {

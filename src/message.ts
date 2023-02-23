@@ -110,11 +110,22 @@ export const GetPeersMessage = Record({
 })
 export type GetPeersMessageType = Static<typeof GetPeersMessage>
 
+export const GetChainTipMessage = Record({
+  type: Literal('getchaintip')
+})
+export type GetChainTipMessageType = Static<typeof GetChainTipMessage>
+
 export const PeersMessage = Record({
   type: Literal('peers'),
   peers: Array(String)
 })
 export type PeersMessageType = Static<typeof PeersMessage>
+
+export const ChainTipMessage = Record({
+  type: Literal('chaintip'),
+  blockid: String
+})
+export type ChainTipMessageType = Static<typeof ChainTipMessage>
 
 export const GetObjectMessage = Record({
   type: Literal('getobject'),
@@ -142,12 +153,14 @@ export const Messages = [
   HelloMessage,
   GetPeersMessage, PeersMessage,
   IHaveObjectMessage, GetObjectMessage, ObjectMessage,
-  ErrorMessage
+  ErrorMessage,
+  GetChainTipMessage, ChainTipMessage
 ]
 export const Message = Union(
   HelloMessage,
   GetPeersMessage, PeersMessage,
   IHaveObjectMessage, GetObjectMessage, ObjectMessage,
-  ErrorMessage
+  ErrorMessage,
+  GetChainTipMessage, ChainTipMessage
 )
 export type MessageType = Static<typeof Message>
