@@ -486,4 +486,105 @@ function test_incorrect_height(){
 }
 
 
-test_incorrect_height()
+// test_incorrect_height()
+
+
+/// ================ Testcase: longest chain ================
+
+function test_longest_chain(){
+
+    const chain_tip = {"blockid":"000000003e5e079059e48b50fd291c0d370d03b7ac29bfbd2d9e2cea67821aa6","type":"chaintip"}
+    // blocks 7 to 1
+    const blocks = [
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671426714,"miner":"grader","nonce":"5f8592e30a2205a485846248987550aaf2094ec59e7931dc650c7451ebaa7883","note":"Block 7","previd":"0000000017ec315908c0b52b4f86e3f373e7824e1b4ed577716d6fcbf16af1bd","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671355893,"miner":"grader","nonce":"76931fac9dab2b36c248b87d6ae33f9a62d7183a5d5789e4b2d6b44251c0ce18","note":"Block 6","previd":"000000004e011bad33abfedaa4b32fdde6a39a57fa28e428f4f24843df223a1e","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671319174,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875d05eae29f","note":"Block 5","previd":"00000000211f42dca9d084f1aaf38d8fe8ef87c56958de83ead19891b43c437d","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671294586,"miner":"grader","nonce":"09e111c7e1e7acb6f8cac0bb2fc4c8bc2ae3baaab9165cc458e199cc0d5fc2f4","note":"Block 4","previd":"00000000331ae5c93f9bf94c5b62bf7978b499549b8f6234d3b2743ffbd1bd58","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671212387,"miner":"grader","nonce":"b1acf38984b35ae882809dd4cfe7abc5c61baa52e053b4c3643f204f5d92de8e","note":"Block 3","previd":"0000000046fb03c2fcc7da4c5c1b208d64ec985595d14f60b669b106f5c3b8e7","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671168572,"miner":"grader","nonce":"e51c9737903343947e02086541e4c48a99630aa9aece153843a4b190a053d95c","note":"Block 2","previd":"000000000f007c87b4924c8c9668c6bb10eaa8422daa4baa6eff766e114eb331","txids":[],"type":"block"},"type":"object"},
+        {"object":{"T":"00000000abc00000000000000000000000000000000000000000000000000000","created":1671093685,"miner":"grader","nonce":"5f7091a5abb0874df3e8cb4543a5eb93b0441e9ca4c2b0fb3d30875ce1504ce5","note":"Block 1","previd":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","txids":[],"type":"block"},"type":"object"}
+    ]
+    const get_chain_tip = {"type":"getchaintip"}
+    // get blocks 7 to 0 (genesis block)
+    const get_blocks = [
+        {"objectid":"000000003e5e079059e48b50fd291c0d370d03b7ac29bfbd2d9e2cea67821aa6","type":"getobject"},
+        {"objectid":"0000000017ec315908c0b52b4f86e3f373e7824e1b4ed577716d6fcbf16af1bd","type":"getobject"},
+        {"objectid":"000000004e011bad33abfedaa4b32fdde6a39a57fa28e428f4f24843df223a1e","type":"getobject"},
+        {"objectid":"00000000211f42dca9d084f1aaf38d8fe8ef87c56958de83ead19891b43c437d","type":"getobject"},
+        {"objectid":"00000000331ae5c93f9bf94c5b62bf7978b499549b8f6234d3b2743ffbd1bd58","type":"getobject"},
+        {"objectid":"0000000046fb03c2fcc7da4c5c1b208d64ec985595d14f60b669b106f5c3b8e7","type":"getobject"},
+        {"objectid":"000000000f007c87b4924c8c9668c6bb10eaa8422daa4baa6eff766e114eb331","type":"getobject"},
+        {"objectid":"0000000052a0e645eca917ae1c196e0d0a4fb756747f29ef52594d68484bb5e2","type":"getobject"}
+    ]
+
+    const client = new net.Socket();
+    console.log("--------------------------------");
+    console.log("test recursive validation block")
+    client.connect(SERVER_PORT, SERVER_HOST, async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(`${chain_tip}\n`)
+        for (const block of blocks) {
+            client.write(canonicalize(block) + '\n');
+            logger.debug(`client 1: sending ${canonicalize(block)}`)
+            await delay(1000);
+        }
+        client.write(`${get_chain_tip}\n`)
+        await delay(1000);
+        for (const get_block of get_blocks) {
+            client.write(canonicalize(get_block) + '\n');
+            logger.debug(`client 1: sending ${canonicalize(get_block)}`)
+            await delay(1000);
+        }
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent to client 1: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+    const client_2 = new net.Socket();
+    client_2.connect({port: SERVER_PORT, host: SERVER_HOST}, async () => {
+        console.log('Connected to server.');
+        client_2.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client_2.write(Messages.getPeersMessage.json + '\n');
+        await delay(15000);
+        //close connection
+        client_2.destroy();
+    })
+    client_2.on('data', (data) => {
+        console.log(`Server sent to client 2: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client_2.destroy()
+            }
+        }
+    })
+    client_2.on('close', () => {
+        console.log('Connection closed to client 2\n\n');
+    })
+}
+
+test_longest_chain()
