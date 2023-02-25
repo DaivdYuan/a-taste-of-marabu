@@ -4,6 +4,7 @@ import { TransactionInputObjectType,
          TransactionOutputObjectType,
          OutpointObjectType,
          SpendingTransactionObject, 
+         ErrorMessageType,
          AnnotatedError} from './message'
 import { PublicKey, Signature } from './crypto/signature'
 import { canonicalize } from 'json-canonicalize'
@@ -137,9 +138,6 @@ export class Transaction {
         // validating coinbase transaction in the context of a block
         if (idx > 0) {
           throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase transaction ${this.txid} must be the first in block.`)
-        }
-        if (this.height !== await block.getHeight()){
-          throw new AnnotatedError('INVALID_BLOCK_COINBASE', `Coinbase transaction ${this.txid} has invalid height.`)
         }
       }
       this.fees = 0

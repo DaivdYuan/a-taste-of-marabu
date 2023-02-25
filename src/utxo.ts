@@ -14,7 +14,7 @@ export class UTXOSet {
   copy() {
     return new UTXOSet(new Set<string>(Array.from(this.outpoints)))
   }
-  async apply(tx: Transaction, idx?: number, block?: Block) {
+  async apply(tx: Transaction) {
     logger.debug(`Applying transaction ${tx.txid} to UTXO set`)
     logger.debug(`Transaction ${tx.txid} has fees ${tx.fees}`)
 
@@ -57,7 +57,7 @@ export class UTXOSet {
 
     for (const tx of txs) {
       logger.debug(`Applying transaction ${tx.txid} to state`)
-      await this.apply(tx, idx, block)
+      await this.apply(tx)
       logger.debug(`State after transaction application is: ${this}`)
       ++idx
     }

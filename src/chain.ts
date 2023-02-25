@@ -1,42 +1,31 @@
 import { Block } from "./block";
 import { logger } from "./logger";
-import { ObjectTxOrBlock, ObjectType,
-    TransactionObjectType, BlockObjectType, AnnotatedError } from './message'
-import { objectManager } from './object'
-import { hash } from './crypto/hash'
-import { canonicalize } from 'json-canonicalize'
 
-class ChainManager { 
-    longestChainHeight: number = 0
-    longestChainTipHash: string;
+class ChainManager {
+  longestChainHeight: number = 0
+  longestChainTip: Block | null = null
 
-    async onValidBlockArrival(block: Block) {
-        const height = await block.getHeight()
-
-        if (height === null) {
-            return
-        }
-        if (height > this.longestChainHeight) {
-            logger.debug(`New longest chain has height ${height} and tip ${block.blockid}`)
-            this.longestChainHeight = height
-            this.longestChainTipHash = objectManager.id(block.toNetworkObject())
-        }
+  async init() {
+    this.longestChainTip = await Block.makeGenesis()
+  }
+  async onValidBlockArrival(block: Block) {
+    if (!block.valid) {
+      throw new Error(`Received onValidBlockArrival() call for invalid block ${block.blockid}`)
     }
+    const height = block.height
 
-    constructor() {
-        const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
-        const GENESIS: BlockObjectType = {
-          T: TARGET,
-          created: 1671062400,
-          miner: 'Marabu',
-          nonce: '000000000000000000000000000000000000000000000000000000021bea03ed',
-          note: 'The New York Times 2022-12-13: Scientists Achieve Nuclear Fusion Breakthrough With Blast of 192 Lasers',
-          previd: null,
-          txids: [],
-          type: 'block'
-        }
-        this.longestChainTipHash = hash(canonicalize(GENESIS))
+    if (this.longestChainTip === null) {
+      throw new Error('We do not have a local chain to compare against')
     }
+    if (height === undefined) {
+      throw new Error(`We received a block ${block.blockid} we thought was valid, but had no calculated height.`)
+    }
+    if (height > this.longestChainHeight) {
+      logger.debug(`New longest chain has height ${height} and tip ${block.blockid}`)
+      this.longestChainHeight = height
+      this.longestChainTip = block
+    }
+  }
 }
 
 export const chainManager = new ChainManager()

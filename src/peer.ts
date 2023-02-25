@@ -1,31 +1,26 @@
 import { logger } from './logger'
 import { MessageSocket } from './network'
 import semver from 'semver'
-import { Messages,
-         Message,
+import { Message,
          HelloMessage,
-         PeersMessage, GetPeersMessage,
-         IHaveObjectMessage, GetObjectMessage, ObjectMessage,
-         ErrorMessage,
-         MessageType,
          HelloMessageType,
          PeersMessageType, GetPeersMessageType,
-         ChainTipMessageType, GetChainTipMessageType,
          IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
+         GetChainTipMessageType, ChainTipMessageType,
          ErrorMessageType,
          AnnotatedError
         } from './message'
 import { peerManager } from './peermanager'
 import { canonicalize } from 'json-canonicalize'
-import { db, objectManager } from './object'
+import { objectManager } from './object'
 import { network } from './network'
 import { ObjectId } from './object'
+import { chainManager } from './chain'
 import { Block } from './block'
 import { Transaction } from './transaction'
-import {chainManager} from './chain'
 
 const VERSION = '0.9.0'
-const NAME = 'Malibu (pset3)'
+const NAME = 'Malibu (pset5)'
 
 // Number of peers that each peer is allowed to report to us
 const MAX_PEERS_PER_PEER = 30
@@ -46,17 +41,6 @@ export class Peer {
   async sendGetPeers() {
     this.sendMessage({
       type: 'getpeers'
-    })
-  }
-  async sendGetChainTip() { 
-    this.sendMessage({
-      type: 'getchaintip'
-    })
-  }
-  async sendChainTip() {
-    this.sendMessage({
-      type: 'chaintip',
-      blockid: chainManager.longestChainTipHash
     })
   }
   async sendPeers() {
@@ -81,6 +65,17 @@ export class Peer {
     this.sendMessage({
       type: 'getobject',
       objectid: objid
+    })
+  }
+  async sendGetChainTip() {
+    this.sendMessage({
+      type: 'getchaintip'
+    })
+  }
+  async sendChainTip(blockid: ObjectId) {
+    this.sendMessage({
+      type: 'chaintip',
+      blockid
     })
   }
   async sendError(err: AnnotatedError) {
@@ -151,18 +146,10 @@ export class Peer {
       this.onMessageIHaveObject.bind(this),
       this.onMessageGetObject.bind(this),
       this.onMessageObject.bind(this),
-      this.onMessageError.bind(this),
       this.onMessageGetChainTip.bind(this),
-      this.onMessageChainTip.bind(this)
+      this.onMessageChainTip.bind(this),
+      this.onMessageError.bind(this)
     )(msg)
-  }
-  async onMessageGetChainTip(msg: GetChainTipMessageType) {
-    this.info(`Remote party is requesting chaintip. Sharing.`)
-    await this.sendChainTip()
-  }
-  async onMessageChainTip(msg: ChainTipMessageType) {
-    this.info(`Remote party is reporting their chaintip. Requesting.`)
-    await this.sendGetObject(msg.blockid)
   }
   async onMessageHello(msg: HelloMessageType) {
     if (!semver.satisfies(msg.version, `^${VERSION}`)) {
@@ -188,7 +175,7 @@ export class Peer {
   async onMessageIHaveObject(msg: IHaveObjectMessageType) {
     this.info(`Peer claims knowledge of: ${msg.objectid}`)
 
-    if (!await db.exists(msg.objectid)) {
+    if (!await objectManager.exists(msg.objectid)) {
       this.info(`Object ${msg.objectid} discovered`)
       await this.sendGetObject(msg.objectid)
     }
@@ -241,6 +228,19 @@ export class Peer {
         objectid
       })
     }
+  }
+  async onMessageGetChainTip(msg: GetChainTipMessageType) {
+    if (chainManager.longestChainTip === null) {
+      this.warn(`Chain was not initialized when a peer requested it`)
+      return
+    }
+    this.sendChainTip(chainManager.longestChainTip.blockid)
+  }
+  async onMessageChainTip(msg: ChainTipMessageType) {
+    if (await objectManager.exists(msg.blockid)) {
+      return
+    }
+    this.sendGetObject(msg.blockid)
   }
   async onMessageError(msg: ErrorMessageType) {
     this.warn(`Peer reported error: ${msg.name}`)
