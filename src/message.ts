@@ -95,7 +95,7 @@ export const BlockObject = Record({
   T: Hash,
   miner: Optional(HumanReadable),
   note: Optional(HumanReadable),
-  studentids: Optional(Array(String))
+  studentids: Optional(Array(String).withConstraint(x => x.length <= 10))
 })
 export type BlockObjectType = Static<typeof BlockObject>
 

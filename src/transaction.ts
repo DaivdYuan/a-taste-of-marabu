@@ -153,11 +153,17 @@ export class Transaction {
       catch (e) {}
     }
 
+    let outpointList: string[] = [];
+
     const inputValues = await Promise.all(
       this.inputs.map(async (input, i) => {
         if (blockCoinbase !== undefined && input.outpoint.txid === blockCoinbase.txid) {
           throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${this.txid} is spending immature coinbase`)
         }
+        if (outpointList.includes(input.outpoint.txid + input.outpoint.index)){
+          throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${this.txid} has duplicate outpoints`)
+        }
+        outpointList.push(input.outpoint.txid + input.outpoint.index)
 
         const prevOutput = await input.outpoint.resolve()
         

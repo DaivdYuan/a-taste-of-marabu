@@ -10,6 +10,7 @@ import { logger } from './logger'
 import { Transaction } from './transaction'
 import { chainManager } from './chain'
 import { Deferred } from './promise'
+import { String } from 'runtypes'
 
 const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
 const GENESIS: BlockObjectType = {
@@ -37,7 +38,7 @@ export class Block {
   nonce: string
   T: string
   created: number
-  miner: string | undefined
+  miner: undefined | string
   note: string | undefined
   studentids: string[] | undefined
   blockid: string
