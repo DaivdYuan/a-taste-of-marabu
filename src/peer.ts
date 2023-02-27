@@ -7,6 +7,7 @@ import { Message,
          PeersMessageType, GetPeersMessageType,
          IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
          GetChainTipMessageType, ChainTipMessageType,
+         GetMempoolMessageType, MempoolMessageType,
          ErrorMessageType,
          AnnotatedError
         } from './message'
@@ -78,6 +79,11 @@ export class Peer {
       blockid
     })
   }
+  async sendGetMempool() {
+    this.sendMessage({
+      type: 'getmempool'
+    })
+  }
   async sendError(err: AnnotatedError) {
     try {
       this.sendMessage(err.getJSON())
@@ -106,6 +112,7 @@ export class Peer {
     await this.sendHello()
     await this.sendGetPeers()
     await this.sendGetChainTip()
+    await this.sendGetMempool()
   }
   async onTimeout() {
     return await this.fatalError(new AnnotatedError('INVALID_FORMAT', 'Timed out before message was complete'))
@@ -148,6 +155,8 @@ export class Peer {
       this.onMessageObject.bind(this),
       this.onMessageGetChainTip.bind(this),
       this.onMessageChainTip.bind(this),
+      this.onMessageGetMempool.bind(this),
+      this.onMessageMempool.bind(this),
       this.onMessageError.bind(this)
     )(msg)
   }
@@ -241,6 +250,12 @@ export class Peer {
       return
     }
     this.sendGetObject(msg.blockid)
+  }
+  async onMessageGetMempool(msg: GetMempoolMessageType) {
+    return
+  }
+  async onMessageMempool(msg: MempoolMessageType) {
+    return
   }
   async onMessageError(msg: ErrorMessageType) {
     this.warn(`Peer reported error: ${msg.name}`)
