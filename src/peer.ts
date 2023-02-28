@@ -86,6 +86,12 @@ export class Peer {
       type: 'getmempool'
     })
   }
+  async sendMempool(txids: ObjectId[]) {
+    this.sendMessage({
+      type: 'mempool',
+      txids: txids
+    })
+  }
   async sendError(err: AnnotatedError) {
     try {
       this.sendMessage(err.getJSON())
@@ -226,9 +232,6 @@ export class Peer {
     let instance: Block | Transaction;
     try {
       instance = await objectManager.validate(msg.object, this)
-      if (TransactionObject.guard(msg.object)) {
-        mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
-      }
     }
     catch (e: any) {
       this.sendError(e)
@@ -257,10 +260,14 @@ export class Peer {
     this.sendGetObject(msg.blockid)
   }
   async onMessageGetMempool(msg: GetMempoolMessageType) {
-    return
+    this.sendMempool(await mempoolManager.getMempool())
   }
   async onMessageMempool(msg: MempoolMessageType) {
-    return
+    for (const txid of msg.txids) {
+      if (!await objectManager.exists(txid)) {
+        await this.sendGetObject(txid)
+      }
+    }
   }
   async onMessageError(msg: ErrorMessageType) {
     this.warn(`Peer reported error: ${msg.name}`)

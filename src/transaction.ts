@@ -11,6 +11,7 @@ import { canonicalize } from 'json-canonicalize'
 import { ver } from './crypto/signature'
 import { logger } from './logger'
 import { Block } from './block'
+import { mempoolManager } from './mempool'
 
 export class Output {
   pubkey: PublicKey
@@ -195,6 +196,10 @@ export class Transaction {
     this.fees = sumInputs - sumOutputs
     logger.debug(`Transaction ${this.txid} pays fees ${this.fees}`)
     logger.debug(`Transaction ${this.txid} is valid`)
+
+    await mempoolManager.onValidTransactionArrival(this)
+    logger.debug(`Transaction ${this.txid} in mempool`)
+
   }
   inputsUnsigned() {
     return this.inputs.map(
