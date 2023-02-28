@@ -1,5 +1,6 @@
 import { Block } from "./block";
 import { logger } from "./logger";
+import { mempoolManager } from './mempool'
 
 class ChainManager {
   longestChainHeight: number = 0
@@ -22,6 +23,7 @@ class ChainManager {
     }
     if (height > this.longestChainHeight) {
       logger.debug(`New longest chain has height ${height} and tip ${block.blockid}`)
+      await mempoolManager.onValidBlockArrival(this.longestChainTip, block)
       this.longestChainHeight = height
       this.longestChainTip = block
     }

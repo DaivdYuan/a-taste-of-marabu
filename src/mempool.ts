@@ -2,6 +2,7 @@ import { Transaction } from './transaction';
 import { Block } from "./block";
 import { logger } from "./logger";
 import { UTXOSet } from './utxo';
+import { Peer } from './peer'
 
 class MempoolManager{
     longestChainHeight: number | undefined = 0
@@ -42,8 +43,29 @@ class MempoolManager{
     //           the new tip and the old tip) TO B_2' (the old tip), by querying the
     //           txids field in those BlockObject
     //    -- iii. try to apply transactions in this.txs to this.stateAfter: UTXOSet
-    async onValidBlockArrival(block: Block) {
-
+    async onValidBlockArrival(prevChaintip: Block, newChaintip: Block) {
+        this.longestChainHeight = newChaintip.height
+        this.longestChainTip = newChaintip
+        if (newChaintip.previd == prevChaintip.blockid) {
+            logger.debug(`New longest chain extends previous longest chain`)
+            this.stateAfter = newChaintip.stateAfter
+            if (this.stateAfter === undefined) {
+                logger.warn(`Mempool was not initialized when a transaction arrived`)
+                return
+            }
+            for (const tx of this.txs) {
+                try {
+                    this.stateAfter.apply(tx)
+                    this.txs.push(tx)
+                } catch (e: any) {
+                    logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
+                    logger.debug(`name: ${e.name}. description: ${e.description}`)
+                }
+            }
+        } else {
+            // this.findCommonAncestor(prevChaintip, newChaintip)
+        }
+        return
     }
 
 }
