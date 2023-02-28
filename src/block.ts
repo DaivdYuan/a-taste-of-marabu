@@ -332,7 +332,7 @@ export class Block {
       this.valid = true
       try {
         await this.save()
-        await chainManager.onValidBlockArrival(this)
+        await chainManager.onValidBlockArrival(this, peer)
       } 
       catch (e: any) {
         throw new AnnotatedError('INTERNAL_ERROR', 'Something went wrong is block saving or state calculations.')
