@@ -9,6 +9,7 @@ import { Message,
          GetChainTipMessageType, ChainTipMessageType,
          GetMempoolMessageType, MempoolMessageType,
          ErrorMessageType,
+         TransactionObject,
          AnnotatedError
         } from './message'
 import { peerManager } from './peermanager'
@@ -19,6 +20,7 @@ import { ObjectId } from './object'
 import { chainManager } from './chain'
 import { Block } from './block'
 import { Transaction } from './transaction'
+import { mempoolManager } from './mempool'
 
 const VERSION = '0.9.0'
 const NAME = 'Malibu (pset5)'
@@ -224,6 +226,9 @@ export class Peer {
     let instance: Block | Transaction;
     try {
       instance = await objectManager.validate(msg.object, this)
+      if (TransactionObject.guard(msg.object)) {
+        mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
+      }
     }
     catch (e: any) {
       this.sendError(e)

@@ -19,6 +19,12 @@ class MempoolManager{
     // 2. add it into txs
     // 3. apply it into stateAfter: UTXOSet
     async onValidTransactionArrival(tx: Transaction) {
+        if (this.stateAfter === undefined) {
+            logger.warn(`Mempool was not initialized when a transaction arrived`)
+            return
+        }
+        this.stateAfter.apply(tx)
+        this.txs.push(tx)
         return
     }
 
