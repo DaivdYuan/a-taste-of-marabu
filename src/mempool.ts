@@ -25,7 +25,7 @@ class MempoolManager{
             logger.warn(`Mempool was not initialized when a transaction arrived`)
             return
         }
-        this.stateAfter.apply(tx)
+        await this.stateAfter.apply(tx)
         this.txs.push(tx)
         return
     }
@@ -57,7 +57,7 @@ class MempoolManager{
             let newTxs: Transaction[] = []
             for (const tx of this.txs) {
                 try {
-                    this.stateAfter.apply(tx)
+                    await this.stateAfter.apply(tx)
                     newTxs.push(tx)
                 } catch (e: any) {
                     logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
@@ -77,7 +77,7 @@ class MempoolManager{
             for (const txs of txIDs_AncestryA) {
                 for (const tx of txs) {
                     try {
-                        this.stateAfter.apply(tx)
+                        await this.stateAfter.apply(tx)
                         newTxs.push(tx)
                     } catch (e: any) {
                         logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
@@ -87,7 +87,7 @@ class MempoolManager{
             }
             for (const tx of this.txs) {
                 try {
-                    this.stateAfter.apply(tx)
+                    await this.stateAfter.apply(tx)
                     newTxs.push(tx)
                 } catch (e: any) {
                     logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
