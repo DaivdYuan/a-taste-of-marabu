@@ -25,14 +25,17 @@ class MempoolManager{
             logger.warn(`Mempool was not initialized when a transaction arrived`)
             return
         }
-        if (this.longestChainHeight && tx.height && tx.height > this.longestChainHeight) {
+        if (tx.height) {
+            logger.warn(`Transaction ${tx.txid} is a coinbase transaction`)
             return;
         }
         logger.debug(`Validating transaction for mempool: ${tx.txid}`)
+        logger.debug(`Current mempool: ${this.txs.map(tx => tx.txid)}`)
         logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
         await this.stateAfter.apply(tx)
-        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
+        logger.debug(`Mempool UTXO after applying transaction: ${[...this.stateAfter.outpoints]}`)
         this.txs.push(tx)
+        logger.debug(`Added transaction to mempool: ${tx.txid}`)
         return
     }
 

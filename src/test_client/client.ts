@@ -170,4 +170,4 @@ function test6() {
 //test3() // PASS
 //test4() // PASS
 //test5()
-//test6()
+test6()

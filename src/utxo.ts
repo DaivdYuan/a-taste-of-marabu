@@ -51,7 +51,11 @@ export class UTXOSet {
     }
     logger.debug(`Adding ${tx.outputs.length} outputs to UTXO set`)
     for (let i = 0; i < tx.outputs.length; ++i) {
-      this.outpoints.add((new Outpoint(tx.txid, i)).toString())
+      let outpoint = new Outpoint(tx.txid, i).toString()
+      if (this.outpoints.has(outpoint)) {
+        throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${tx.txid} has an output that is already in the UTXO set.`)
+      }
+      this.outpoints.add(outpoint)
     }
     logger.debug(`Outpoints set after tx application: ${this}`)
   }
