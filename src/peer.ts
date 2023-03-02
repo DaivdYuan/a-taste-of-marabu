@@ -269,7 +269,7 @@ export class Peer {
   async onMessageMempool(msg: MempoolMessageType) {
     for (let txid in msg.txids) {
       if (!await objectManager.exists(txid)) {
-        await this.sendGetObject(txid)
+        await objectManager.retrieve(txid, this)
       }
     }
   }
