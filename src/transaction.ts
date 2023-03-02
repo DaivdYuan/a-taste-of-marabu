@@ -1,4 +1,3 @@
-import { chainManager } from './../deprecated/chain';
 import { ObjectId, objectManager } from './object'
 import { TransactionInputObjectType,
          TransactionObjectType,
