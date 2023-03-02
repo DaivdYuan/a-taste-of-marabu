@@ -22,6 +22,7 @@ class ChainManager {
     if (height === undefined) {
       throw new Error(`We received a block ${block.blockid} we thought was valid, but had no calculated height.`)
     }
+    logger.debug(`Received block ${block.blockid} with height ${height}, while longest chain height is ${this.longestChainHeight}`)
     if (height > this.longestChainHeight) {
       logger.debug(`New longest chain has height ${height} and tip ${block.blockid}`)
       await mempoolManager.onValidBlockArrival(this.longestChainTip, block, peer)

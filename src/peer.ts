@@ -132,7 +132,7 @@ export class Peer {
 
     try {
       msg = JSON.parse(message)
-      this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
+      //this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
     }
     catch {
       return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Failed to parse incoming message as JSON: ${message}`))
@@ -215,7 +215,7 @@ export class Peer {
     const objectid: ObjectId = objectManager.id(msg.object)
     let known: boolean = false
 
-    this.info(`Received object with id ${objectid}: %o`, msg.object)
+    this.info(`Received object with id ${objectid}`)
 
     known = await objectManager.exists(objectid)
 
@@ -223,7 +223,7 @@ export class Peer {
       this.debug(`Object with id ${objectid} is already known`)
     }
     else {
-      this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
+      this.info(`New object with id ${objectid} downloaded`)
 
       // store object even if it is invalid
       await objectManager.put(msg.object)
@@ -232,6 +232,9 @@ export class Peer {
     let instance: Block | Transaction;
     try {
       instance = await objectManager.validate(msg.object, this)
+      if (TransactionObject.guard(msg.object)) {
+        await mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
+      }
     }
     catch (e: any) {
       this.sendError(e)

@@ -14,7 +14,7 @@ class MempoolManager{
     async init() {
         this.longestChainTip = await Block.makeGenesis()
         this.longestChainHeight = this.longestChainTip.height
-        this.stateAfter = this.longestChainTip.stateAfter
+        this.stateAfter = this.longestChainTip.stateAfter?.copy()
     }
 
     // 1. validate the transaction,
@@ -25,7 +25,13 @@ class MempoolManager{
             logger.warn(`Mempool was not initialized when a transaction arrived`)
             return
         }
+        if (this.longestChainHeight && tx.height && tx.height > this.longestChainHeight) {
+            return;
+        }
+        logger.debug(`Validating transaction for mempool: ${tx.txid}`)
+        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
         await this.stateAfter.apply(tx)
+        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
         this.txs.push(tx)
         return
     }
@@ -45,11 +51,15 @@ class MempoolManager{
     //           txids field in those BlockObject
     //    -- iii. try to apply transactions in this.txs to this.stateAfter: UTXOSet
     async onValidBlockArrival(prevChaintip: Block, newChaintip: Block, peer: Peer) {
+        logger.debug(`Validating block for mempool: ${newChaintip.blockid}`)
         this.longestChainHeight = newChaintip.height
         this.longestChainTip = newChaintip
         if (newChaintip.previd == prevChaintip.blockid) {
             logger.debug(`New longest chain extends previous longest chain`)
-            this.stateAfter = newChaintip.stateAfter
+            this.stateAfter = newChaintip.stateAfter?.copy()
+            if (this.stateAfter){
+                logger.debug(`\n\n\n\nMempool UTXO before applying block: ${[...this.stateAfter.outpoints]}\n\n\n`)
+            }
             if (this.stateAfter === undefined) {
                 logger.warn(`Mempool was not initialized when a transaction arrived`)
                 return
@@ -67,7 +77,7 @@ class MempoolManager{
             this.txs = newTxs
         } else {
             logger.debug(`Reorg might have appearred`)
-            this.stateAfter = newChaintip.stateAfter
+            this.stateAfter = newChaintip.stateAfter?.copy()
             if (this.stateAfter === undefined) {
                 logger.warn(`Mempool was not initialized when a transaction arrived`)
                 return
