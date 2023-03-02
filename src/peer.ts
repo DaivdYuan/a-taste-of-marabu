@@ -86,13 +86,12 @@ export class Peer {
       type: 'getmempool'
     })
   }
-  async sendMempool() {
-    this.sendMessage(<MempoolMessageType>{
+  async sendMempool(txids: ObjectId[]) {
+    this.sendMessage({
       type: 'mempool',
-      txids:  Array.from(mempoolManager.txs, tx => tx.txid)
+      txids: txids
     })
   }
-
   async sendError(err: AnnotatedError) {
     try {
       this.sendMessage(err.getJSON())
@@ -133,7 +132,7 @@ export class Peer {
 
     try {
       msg = JSON.parse(message)
-      this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
+      //this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
     }
     catch {
       return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Failed to parse incoming message as JSON: ${message}`))
@@ -216,7 +215,7 @@ export class Peer {
     const objectid: ObjectId = objectManager.id(msg.object)
     let known: boolean = false
 
-    this.info(`Received object with id ${objectid}: %o`, msg.object)
+    this.info(`Received object with id ${objectid}`)
 
     known = await objectManager.exists(objectid)
 
@@ -224,7 +223,7 @@ export class Peer {
       this.debug(`Object with id ${objectid} is already known`)
     }
     else {
-      this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
+      this.info(`New object with id ${objectid} downloaded`)
 
       // store object even if it is invalid
       await objectManager.put(msg.object)
@@ -234,7 +233,7 @@ export class Peer {
     try {
       instance = await objectManager.validate(msg.object, this)
       if (TransactionObject.guard(msg.object)) {
-        mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
+        await mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
       }
     }
     catch (e: any) {
@@ -264,10 +263,10 @@ export class Peer {
     this.sendGetObject(msg.blockid)
   }
   async onMessageGetMempool(msg: GetMempoolMessageType) {
-    await this.sendMempool();
+    this.sendMempool(await mempoolManager.getMempool())
   }
   async onMessageMempool(msg: MempoolMessageType) {
-    for (let txid in msg.txids) {
+    for (const txid of msg.txids) {
       if (!await objectManager.exists(txid)) {
         await objectManager.retrieve(txid, this)
       }

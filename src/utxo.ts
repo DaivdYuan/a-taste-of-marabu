@@ -16,7 +16,7 @@ export class UTXOSet {
   }
   async apply(tx: Transaction) {
     logger.debug(`Applying transaction ${tx.txid} to UTXO set`)
-    logger.debug(`Transaction ${tx.txid} has fees ${tx.fees}`)
+    //logger.debug(`Transaction ${tx.txid} has fees ${tx.fees}`)
 
     const seen: Set<string> = new Set<string>()
 
@@ -26,6 +26,9 @@ export class UTXOSet {
       const outpointStr: string = input.outpoint.toString()
 
       logger.debug(`Checking to see if outpoint ${outpointStr} is unspent in UTXO outpoints ${this.outpoints}.`)
+      
+      logger.debug(`Current UTXO set: ${[...this.outpoints]}`)
+      
       if (!this.outpoints.has(outpointStr)) {
         logger.debug(`Transaction ${tx.txid} consumes ${outpointStr} which is not in the UTXO set.`)
         throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction consumes output (${JSON.stringify(outpointStr)}) that is not in the UTXO set. ` +

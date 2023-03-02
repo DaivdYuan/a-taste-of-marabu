@@ -1,3 +1,4 @@
+import { ObjectId } from './object';
 import { Transaction } from './transaction';
 import { Block } from "./block";
 import { logger } from "./logger";
@@ -13,7 +14,7 @@ class MempoolManager{
     async init() {
         this.longestChainTip = await Block.makeGenesis()
         this.longestChainHeight = this.longestChainTip.height
-        this.stateAfter = this.longestChainTip.stateAfter
+        this.stateAfter = this.longestChainTip.stateAfter?.copy()
     }
 
     // 1. validate the transaction,
@@ -24,7 +25,13 @@ class MempoolManager{
             logger.warn(`Mempool was not initialized when a transaction arrived`)
             return
         }
-        this.stateAfter.apply(tx)
+        if (this.longestChainHeight && tx.height && tx.height > this.longestChainHeight) {
+            return;
+        }
+        logger.debug(`Validating transaction for mempool: ${tx.txid}`)
+        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
+        await this.stateAfter.apply(tx)
+        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
         this.txs.push(tx)
         return
     }
@@ -44,37 +51,44 @@ class MempoolManager{
     //           txids field in those BlockObject
     //    -- iii. try to apply transactions in this.txs to this.stateAfter: UTXOSet
     async onValidBlockArrival(prevChaintip: Block, newChaintip: Block, peer: Peer) {
+        logger.debug(`Validating block for mempool: ${newChaintip.blockid}`)
         this.longestChainHeight = newChaintip.height
         this.longestChainTip = newChaintip
         if (newChaintip.previd == prevChaintip.blockid) {
             logger.debug(`New longest chain extends previous longest chain`)
-            this.stateAfter = newChaintip.stateAfter
+            this.stateAfter = newChaintip.stateAfter?.copy()
+            if (this.stateAfter){
+                logger.debug(`\n\n\n\nMempool UTXO before applying block: ${[...this.stateAfter.outpoints]}\n\n\n`)
+            }
             if (this.stateAfter === undefined) {
                 logger.warn(`Mempool was not initialized when a transaction arrived`)
                 return
             }
+            let newTxs: Transaction[] = []
             for (const tx of this.txs) {
                 try {
-                    this.stateAfter.apply(tx)
-                    this.txs.push(tx)
+                    await this.stateAfter.apply(tx)
+                    newTxs.push(tx)
                 } catch (e: any) {
                     logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
                     logger.debug(`name: ${e.name}. description: ${e.description}`)
                 }
             }
+            this.txs = newTxs
         } else {
             logger.debug(`Reorg might have appearred`)
-            this.stateAfter = newChaintip.stateAfter
+            this.stateAfter = newChaintip.stateAfter?.copy()
             if (this.stateAfter === undefined) {
                 logger.warn(`Mempool was not initialized when a transaction arrived`)
                 return
             }
             const txIDs_AncestryA = await this.findRollBackTxs(prevChaintip, newChaintip, peer)
+            let newTxs: Transaction[] = []
             for (const txs of txIDs_AncestryA) {
                 for (const tx of txs) {
                     try {
-                        this.stateAfter.apply(tx)
-                        this.txs.push(tx)
+                        await this.stateAfter.apply(tx)
+                        newTxs.push(tx)
                     } catch (e: any) {
                         logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
                         logger.debug(`name: ${e.name}. description: ${e.description}`)
@@ -83,13 +97,14 @@ class MempoolManager{
             }
             for (const tx of this.txs) {
                 try {
-                    this.stateAfter.apply(tx)
-                    this.txs.push(tx)
+                    await this.stateAfter.apply(tx)
+                    newTxs.push(tx)
                 } catch (e: any) {
                     logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
                     logger.debug(`name: ${e.name}. description: ${e.description}`)
                 }
             }
+            this.txs = newTxs
         }
         return
     }
@@ -119,6 +134,13 @@ class MempoolManager{
         return txIDs_AncestryA
     }
 
+    async getMempool(): Promise<ObjectId[]> {
+        let txids: ObjectId[] = []
+        for (const tx of this.txs) {
+            txids.push(tx.txid)
+        }
+        return txids
+    }
 }
 
 export const mempoolManager = new MempoolManager()

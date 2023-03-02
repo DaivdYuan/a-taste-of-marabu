@@ -1,3 +1,4 @@
+import { chainManager } from './../deprecated/chain';
 import { ObjectId, objectManager } from './object'
 import { TransactionInputObjectType,
          TransactionObjectType,
@@ -11,6 +12,7 @@ import { canonicalize } from 'json-canonicalize'
 import { ver } from './crypto/signature'
 import { logger } from './logger'
 import { Block } from './block'
+import { mempoolManager } from './mempool'
 
 export class Output {
   pubkey: PublicKey
@@ -127,7 +129,6 @@ export class Transaction {
     return this.inputs.length === 0
   }
   async validate(idx?: number, block?: Block) {
-    logger.debug(`Validating transaction ${this.txid}`)
     const unsignedTxStr = canonicalize(this.toNetworkObject(false))
 
     if (this.isCoinbase()) {
@@ -180,20 +181,20 @@ export class Transaction {
     let sumInputs = 0
     let sumOutputs = 0
 
-    logger.debug(`Checking the law of conservation for transaction ${this.txid}`)
+    //logger.debug(`Checking the law of conservation for transaction ${this.txid}`)
     for (const inputValue of inputValues) {
       sumInputs += inputValue
     }
-    logger.debug(`Sum of inputs is ${sumInputs}`)
+    //logger.debug(`Sum of inputs is ${sumInputs}`)
     for (const output of this.outputs) {
       sumOutputs += output.value
     }
-    logger.debug(`Sum of outputs is ${sumOutputs}`)
+    //logger.debug(`Sum of outputs is ${sumOutputs}`)
     if (sumInputs < sumOutputs) {
       throw new AnnotatedError('INVALID_TX_CONSERVATION', `Transaction ${this.txid} does not respect the Law of Conservation. Inputs summed to ${sumInputs}, while outputs summed to ${sumOutputs}.`)
     }
     this.fees = sumInputs - sumOutputs
-    logger.debug(`Transaction ${this.txid} pays fees ${this.fees}`)
+    //logger.debug(`Transaction ${this.txid} pays fees ${this.fees}`)
     logger.debug(`Transaction ${this.txid} is valid`)
   }
   inputsUnsigned() {
