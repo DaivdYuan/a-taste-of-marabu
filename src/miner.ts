@@ -2,57 +2,103 @@ import { Transaction, Output } from './transaction';
 import { Block } from './block'
 import { hash } from './crypto/hash'
 import { canonicalize } from 'json-canonicalize';
+import { chainManager } from './chain'
+import { logger } from "./logger";
+import { mempool } from './mempool'
 import { OUR_PUBLIC_KEY } from './crypto/signature';
+import { TransactionInputObjectType,
+    TransactionObjectType,
+    TransactionObject,
+    CoinbaseTransactionObject,
+    BlockObject,
+    TransactionOutputObjectType,
+    OutpointObjectType,
+    SpendingTransactionObject, 
+    ErrorMessageType,
+    AnnotatedError} from './message'
+
+const MINING_INTERVAL = 2000
+const NONCE_LEN = 64
 
 // miner for the main server
-export class Miner {
-    coinBaseTx: Transaction;
+class Miner {
+    coinBaseTx: Transaction | null = null;
     height: number = 0;
     txs: string[] = []
     nonce: string = "";
     target: string = "00000000abc00000000000000000000000000000000000000000000000000000";
     previd: string | null = null;
     studentids: string[] = ['davidy02', 'endeshen', 'bettyyw'];
-    miner: string = "Student Miner"
-    currentBlock: Block;
-
-    constructor(txs: string[], previd: string, height: number) {
-        this.height = height;
-        this.coinBaseTx = this.createCoinBaseTx();
-        this.txs = [this.coinBaseTx.txid, ...txs];
-        this.previd = previd;
-        this.currentBlock = new Block(
-            this.previd, this.txs, "",            // nonce is empty
-            this.target, Math.floor(new Date().getTime() / 1000), 
-            this.miner, undefined, this.studentids
-        ); 
-    }
+    miner: string = "Student Miner";
+    currentBlock: Block | null = null;
+    chaintip: Block | null = null;
 
     createCoinBaseTx(): Transaction {
-        let tx = new Transaction("", [], [
-            new Output(OUR_PUBLIC_KEY, 50000000000)
-        ], this.height);
-        tx.txid = hash(canonicalize(this.coinBaseTx.toNetworkObject()));
-        return tx;
+        let txobj = {
+            type: "transaction",
+            height: this.height,
+            outputs: [
+                {
+                    pubkey: OUR_PUBLIC_KEY,
+                    value: 50000000000
+                }
+            ]
+        }
+        if (!CoinbaseTransactionObject.guard(txobj)) {
+            throw new Error('Error creating coinbase Tx')
+        }
+        return Transaction.fromNetworkObject(txobj)
     }
 
     // mine a block
     async mine() {
-        if (this.currentBlock == null) {
-            return;
+
+        this.chaintip = chainManager.longestChainTip
+        if (this.chaintip == null) {
+            logger.warn("no chaintip... skip mining")
+            return
+        }
+        logger.debug(`mining with chaintip ${this.chaintip.blockid}`)
+        this.height = chainManager.longestChainHeight + 1
+        this.coinBaseTx = this.createCoinBaseTx();
+        this.txs = [this.coinBaseTx.txid, ...mempool.getTxIds()]
+        this.previd = this.chaintip.blockid
+
+        let mining_obj = {
+            type: 'object',
+            previd: this.previd,
+            txids: this.txs,
+            nonce: "",
+            T: this.target,
+            created: Math.floor(new Date().getTime() / 1000),
+            miner: this.miner,
+            note: "zzz",
+            studentids: this.studentids
         }
         let nonce = 0;
         while (true) {
-            this.currentBlock.nonce = nonce.toString();
-            let blockid = hash(canonicalize(this.currentBlock));
+            mining_obj.nonce = String(nonce).padStart(NONCE_LEN, '0')
+            if (!BlockObject.guard(mining_obj)) {
+                throw new Error('Error creating block')
+            }
+            let blockid = (await Block.fromNetworkObject(mining_obj)).blockid
             if (blockid < this.target) {
-                return this.currentBlock; // TODO on success
+                // success
+                // 1. store into our database
+                // 2. broadcast to peers
             }
             nonce++;
         }
     }
-    
-    // TODO
-    // async submitBlock(block: Block) {
+
+    init() {
+        try {
+            setInterval(this.mine, MINING_INTERVAL)
+        } catch (e) {
+            throw new AnnotatedError('INTERNAL_ERROR', 'Something went wrong while mining blocks.')
+        }
+    }
 
 }
+
+export const miner = new Miner()

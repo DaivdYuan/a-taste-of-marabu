@@ -16,7 +16,7 @@ export interface MessageTemplate{
 
 export class HelloMessage implements MessageTemplate{
     readonly type = "hello";
-    readonly version: string = "0.9.0";
+    readonly version: string = "0.10.0";
     readonly agent: string = "Marabu-Core Client 0.9";
     get json(): string{
         return canonicalize(this);

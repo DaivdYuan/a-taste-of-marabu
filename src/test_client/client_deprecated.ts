@@ -640,3 +640,41 @@ function test_longest_chain(){
 }
 
 //test_longest_chain()
+
+
+
+
+function get_chain_tip() {
+    const client = new net.Socket();
+    client.connect(18018, "45.63.84.226", async () => {
+        console.log('Connected to server.');
+        client.write(Messages.helloMessage.json + '\n');
+        await delay(1000);
+        client.write(Messages.getPeersMessage.json + '\n');
+        await delay(1000);
+        client.write(canonicalize({type: "getchaintip"}) + '\n')
+        await delay(1000);
+        client.write(canonicalize({type: "getobject", objectid: '000000001030d0b983b32af089beb89e1cc4500e972011176b79b4db90997ca4'}) + '\n')
+        await delay(15000);
+        //close connection
+        client.destroy();
+    })
+    client.on('data', (data) => {
+        console.log(`Server sent: ${data}`);
+        const segments = data.toString().split('\n')
+        for (const segment of segments){
+            if (segment.length == 0){
+                continue
+            }
+            const parsed = JSON.parse(segment)
+            if (parsed.type == "error") {
+                client.destroy()
+            }
+        }
+    })
+    client.on('close', () => {
+        console.log('Connection closed\n\n');
+    })
+}
+
+get_chain_tip()
