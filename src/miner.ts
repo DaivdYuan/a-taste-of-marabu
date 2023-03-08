@@ -17,9 +17,13 @@ import { TransactionInputObjectType,
     ErrorMessageType,
     AnnotatedError} from './message'
 import { network } from './network'
+const {parentPort, workerData} = require("worker_threads");
 
-const MINING_INTERVAL = 2000
 const NONCE_LEN = 64
+
+const CHAINTIP = workerData.chaintip
+const HEIGHT = workerData.height
+const TXS = workerData.txs
 
 // miner for the main server
 class Miner {
@@ -32,7 +36,7 @@ class Miner {
     studentids: string[] = ['davidy02', 'endeshen', 'bettyyw'];
     miner: string = "Student Miner";
     currentBlock: Block | null = null;
-    chaintip: Block | null = null;
+    chaintip: string | null = null;
 
     createCoinBaseTx(): Transaction {
         let txobj = {
@@ -54,16 +58,12 @@ class Miner {
     // mine a block
     async mine() {
 
-        this.chaintip = chainManager.longestChainTip
-        if (this.chaintip == null) {
-            logger.warn("no chaintip... skip mining")
-            return
-        }
-        this.height = chainManager.longestChainHeight + 1
-        logger.debug(`mining with chaintip ${this.chaintip.blockid}, height: ${this.height}`)
+        this.chaintip = CHAINTIP
+        this.height = HEIGHT + 1
+        logger.debug(`mining with chaintip ${this.chaintip}, neww height: ${this.height}`)
         this.coinBaseTx = this.createCoinBaseTx() // need to store coinbase tx TODO
-        this.txs = [this.coinBaseTx.txid, ...mempool.getTxIds()]
-        this.previd = this.chaintip.blockid
+        this.txs = [this.coinBaseTx.txid, ...TXS]
+        this.previd = this.chaintip
 
         let nonce = 0;
         while (true) {
@@ -91,15 +91,7 @@ class Miner {
         }
     }
 
-    async init() {
-        // await setTimeout(10000);
-        try {
-            setInterval(this.mine.bind(this), MINING_INTERVAL)
-        } catch (e) {
-            throw new AnnotatedError('INTERNAL_ERROR', 'Something went wrong while mining blocks.')
-        }
-    }
-
 }
 
-export const miner = new Miner()
+const miner = new Miner()
+miner.mine()

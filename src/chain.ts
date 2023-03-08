@@ -2,10 +2,12 @@ import { Block } from "./block";
 import { logger } from "./logger";
 import { mempool } from "./mempool";
 import { db } from "./object";
+const { Worker } = require('worker_threads')
 
 class ChainManager {
   longestChainHeight: number = 0
   longestChainTip: Block | null = null
+  worker: Worker | null = null
 
   async init() {
     let tip, height, inited = false
@@ -56,6 +58,15 @@ class ChainManager {
       this.longestChainTip = block
       await mempool.reorg(lca, shortFork, longFork)
       await this.save()
+      if (this.worker != null) {
+        this.worker.terminate()
+      }
+      logger.debug(`spawning miner`)
+      this.worker = new Worker("./dist/miner.js", {workerData: {
+        chaintip: this.longestChainTip.blockid,
+        height: this.longestChainTip.height,
+        txs: mempool.getTxIds(),
+      }})
     }
   }
 }
