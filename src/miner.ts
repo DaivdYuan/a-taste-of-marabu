@@ -17,6 +17,7 @@ import { TransactionInputObjectType,
     ErrorMessageType,
     AnnotatedError} from './message'
 import { network } from './network'
+import { setTimeout } from "timers/promises";
 
 const MINING_INTERVAL = 2000
 const NONCE_LEN = 64
@@ -59,9 +60,9 @@ class Miner {
             logger.warn("no chaintip... skip mining")
             return
         }
-        logger.debug(`mining with chaintip ${this.chaintip.blockid}`)
         this.height = chainManager.longestChainHeight + 1
-        this.coinBaseTx = this.createCoinBaseTx();
+        logger.debug(`mining with chaintip ${this.chaintip.blockid}, height: ${this.height}`)
+        this.coinBaseTx = this.createCoinBaseTx() // need to store coinbase tx TODO
         this.txs = [this.coinBaseTx.txid, ...mempool.getTxIds()]
         this.previd = this.chaintip.blockid
 
@@ -87,12 +88,14 @@ class Miner {
                   })
             }
             nonce++;
+            if (nonce % 50000 == 49999) {logger.debug("tried 50000 nounces")}
         }
     }
 
     async init() {
+        // await setTimeout(10000);
         try {
-            setInterval(this.mine, MINING_INTERVAL)
+            setInterval(this.mine.bind(this), MINING_INTERVAL)
         } catch (e) {
             throw new AnnotatedError('INTERNAL_ERROR', 'Something went wrong while mining blocks.')
         }

@@ -654,6 +654,8 @@ function get_chain_tip() {
         await delay(1000);
         client.write(canonicalize({type: "getchaintip"}) + '\n')
         await delay(1000);
+        client.write(canonicalize({type: "getobject", objectid: '000000004eefecb34a1619f54069315f8b2cf782c8438b9ac0f5fa95d5f960bc'}) + '\n')
+        await delay(1000);
         client.write(canonicalize({type: "getobject", objectid: '000000001030d0b983b32af089beb89e1cc4500e972011176b79b4db90997ca4'}) + '\n')
         await delay(15000);
         //close connection
