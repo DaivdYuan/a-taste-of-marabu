@@ -10,6 +10,7 @@ import { logger } from './logger'
 import { hash } from './crypto/hash'
 import { Peer } from './peer'
 import { Deferred, delay, resolveToReject } from './promise'
+import { mempool } from './mempool'
 
 export const db = new level('./db')
 const OBJECT_AVAILABILITY_TIMEOUT = 5000 // ms
@@ -55,6 +56,14 @@ class ObjectManager {
         const tx: Transaction = Transaction.fromNetworkObject(obj)
         logger.debug(`Validating transaction: ${tx.txid}`)
         await tx.validate()
+
+        if (!tx.isCoinbase()) {
+          const success: boolean = await mempool.onTransactionArrival(tx)
+
+          if (!success) {
+            throw new AnnotatedError('INVALID_TX_OUTPOINT', 'Failed to add invalid transaction to mempool')
+          }
+        }
         return tx
       },
       async (obj: BlockObjectType) => {

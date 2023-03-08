@@ -1,6 +1,7 @@
 import { Block } from './block'
 import { logger } from './logger'
-import { AnnotatedError } from './message'
+import { AnnotatedError, OutpointObject, OutpointObjectType } from './message'
+import { db, ObjectId } from './object'
 import { Outpoint, Transaction } from './transaction'
 
 export type UTXO = Set<string>
@@ -14,9 +15,9 @@ export class UTXOSet {
   copy() {
     return new UTXOSet(new Set<string>(Array.from(this.outpoints)))
   }
-  async apply(tx: Transaction) {
+  async apply(tx: Transaction, idx?: number, block?: Block) {
     logger.debug(`Applying transaction ${tx.txid} to UTXO set`)
-    //logger.debug(`Transaction ${tx.txid} has fees ${tx.fees}`)
+    logger.debug(`Transaction ${tx.txid} has fees ${tx.fees}`)
 
     const seen: Set<string> = new Set<string>()
 
@@ -26,9 +27,6 @@ export class UTXOSet {
       const outpointStr: string = input.outpoint.toString()
 
       logger.debug(`Checking to see if outpoint ${outpointStr} is unspent in UTXO outpoints ${this.outpoints}.`)
-      
-      logger.debug(`Current UTXO set: ${[...this.outpoints]}`)
-      
       if (!this.outpoints.has(outpointStr)) {
         logger.debug(`Transaction ${tx.txid} consumes ${outpointStr} which is not in the UTXO set.`)
         throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction consumes output (${JSON.stringify(outpointStr)}) that is not in the UTXO set. ` +
@@ -51,11 +49,7 @@ export class UTXOSet {
     }
     logger.debug(`Adding ${tx.outputs.length} outputs to UTXO set`)
     for (let i = 0; i < tx.outputs.length; ++i) {
-      let outpoint = new Outpoint(tx.txid, i).toString()
-      if (this.outpoints.has(outpoint)) {
-        throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${tx.txid} has an output that is already in the UTXO set.`)
-      }
-      this.outpoints.add(outpoint)
+      this.outpoints.add((new Outpoint(tx.txid, i)).toString())
     }
     logger.debug(`Outpoints set after tx application: ${this}`)
   }
@@ -64,7 +58,7 @@ export class UTXOSet {
 
     for (const tx of txs) {
       logger.debug(`Applying transaction ${tx.txid} to state`)
-      await this.apply(tx)
+      await this.apply(tx, idx, block)
       logger.debug(`State after transaction application is: ${this}`)
       ++idx
     }

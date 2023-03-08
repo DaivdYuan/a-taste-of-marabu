@@ -11,7 +11,6 @@ import { canonicalize } from 'json-canonicalize'
 import { ver } from './crypto/signature'
 import { logger } from './logger'
 import { Block } from './block'
-import { mempoolManager } from './mempool'
 
 export class Output {
   pubkey: PublicKey
@@ -128,8 +127,12 @@ export class Transaction {
     return this.inputs.length === 0
   }
   async validate(idx?: number, block?: Block) {
+    logger.debug(`Validating transaction ${this.txid}`)
     const unsignedTxStr = canonicalize(this.toNetworkObject(false))
-
+    
+    if (this.inputs.length === 0 && this.outputs.length === 0) {
+      throw new AnnotatedError('INVALID_FORMAT', 'Non-coinbase transactions must have at least one input.')
+    }
     if (this.isCoinbase()) {
       if (this.outputs.length > 1) {
         throw new AnnotatedError('INVALID_FORMAT', `Invalid coinbase transaction ${this.txid}. Coinbase must have only a single output.`)
@@ -153,17 +156,11 @@ export class Transaction {
       catch (e) {}
     }
 
-    let outpointList: string[] = [];
-
     const inputValues = await Promise.all(
       this.inputs.map(async (input, i) => {
         if (blockCoinbase !== undefined && input.outpoint.txid === blockCoinbase.txid) {
           throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${this.txid} is spending immature coinbase`)
         }
-        if (outpointList.includes(input.outpoint.txid + input.outpoint.index)){
-          throw new AnnotatedError('INVALID_TX_OUTPOINT', `Transaction ${this.txid} has duplicate outpoints`)
-        }
-        outpointList.push(input.outpoint.txid + input.outpoint.index)
 
         const prevOutput = await input.outpoint.resolve()
         
@@ -180,20 +177,20 @@ export class Transaction {
     let sumInputs = 0
     let sumOutputs = 0
 
-    //logger.debug(`Checking the law of conservation for transaction ${this.txid}`)
+    logger.debug(`Checking the law of conservation for transaction ${this.txid}`)
     for (const inputValue of inputValues) {
       sumInputs += inputValue
     }
-    //logger.debug(`Sum of inputs is ${sumInputs}`)
+    logger.debug(`Sum of inputs is ${sumInputs}`)
     for (const output of this.outputs) {
       sumOutputs += output.value
     }
-    //logger.debug(`Sum of outputs is ${sumOutputs}`)
+    logger.debug(`Sum of outputs is ${sumOutputs}`)
     if (sumInputs < sumOutputs) {
       throw new AnnotatedError('INVALID_TX_CONSERVATION', `Transaction ${this.txid} does not respect the Law of Conservation. Inputs summed to ${sumInputs}, while outputs summed to ${sumOutputs}.`)
     }
     this.fees = sumInputs - sumOutputs
-    //logger.debug(`Transaction ${this.txid} pays fees ${this.fees}`)
+    logger.debug(`Transaction ${this.txid} pays fees ${this.fees}`)
     logger.debug(`Transaction ${this.txid} is valid`)
   }
   inputsUnsigned() {

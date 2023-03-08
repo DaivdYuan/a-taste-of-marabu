@@ -7,7 +7,7 @@ import { logger } from './logger'
 const Hash = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
 const Sig = String.withConstraint(s => /^[0-9a-f]{128}$/.test(s))
 const PK = String.withConstraint(s => /^[0-9a-f]{64}$/.test(s))
-const NonNegative = Number.withConstraint(n => n >= 0)
+const NonNegative = Number.withConstraint(n => n >= 0 && global.Number.isInteger(n))
 const Coins = NonNegative
 const ErrorChoices = Union(
   Literal('INTERNAL_ERROR'),
@@ -91,11 +91,11 @@ export const BlockObject = Record({
   txids: Array(Hash),
   nonce: String,
   previd: Union(Hash, Null),
-  created: Number,
+  created: NonNegative,
   T: Hash,
   miner: Optional(HumanReadable),
   note: Optional(HumanReadable),
-  studentids: Optional(Array(HumanReadable).withConstraint(x => x.length <= 10))
+  studentids: Optional(Array(String))
 })
 export type BlockObjectType = Static<typeof BlockObject>
 
@@ -152,11 +152,11 @@ export type ChainTipMessageType = Static<typeof ChainTipMessage>
 export const GetMempoolMessage = Record({
   type: Literal('getmempool')
 })
-export type GetMempoolMessageType = Static<typeof GetMempoolMessage>
+export type GetMemPoolMessageType = Static<typeof GetMempoolMessage>
 
 export const MempoolMessage = Record({
   type: Literal('mempool'),
-  txids: Array(Hash)
+  txids: Array(String)
 })
 export type MempoolMessageType = Static<typeof MempoolMessage>
 

@@ -1,149 +1,107 @@
-import { ObjectId } from './object';
-import { Transaction } from './transaction';
-import { Block } from "./block";
-import { logger } from "./logger";
-import { UTXOSet } from './utxo';
-import { Peer } from './peer'
+import { Block } from './block'
+import { Chain } from './chain'
+import { logger } from './logger'
+import { AnnotatedError } from './message'
+import { db, ObjectId, objectManager } from './object'
+import { Transaction } from './transaction'
+import { UTXOSet } from './utxo'
 
-class MempoolManager{
-    longestChainHeight: number | undefined = 0
-    longestChainTip: Block | null = null
-    txs: Transaction[] = []
-    stateAfter: UTXOSet | undefined
-    
-    async init() {
-        this.longestChainTip = await Block.makeGenesis()
-        this.longestChainHeight = this.longestChainTip.height
-        this.stateAfter = this.longestChainTip.stateAfter?.copy()
-    }
+class MemPool {
+  txs: Transaction[] = []
+  state: UTXOSet | undefined
 
-    // 1. validate the transaction,
-    // 2. add it into txs
-    // 3. apply it into stateAfter: UTXOSet
-    async onValidTransactionArrival(tx: Transaction) {
-        if (this.stateAfter === undefined) {
-            logger.warn(`Mempool was not initialized when a transaction arrived`)
-            return
-        }
-        if (tx.height) {
-            logger.warn(`Transaction ${tx.txid} is a coinbase transaction`)
-            return;
-        }
-        logger.debug(`Validating transaction for mempool: ${tx.txid}`)
-        logger.debug(`Current mempool: ${this.txs.map(tx => tx.txid)}`)
-        logger.debug(`Mempool UTXO before applying transaction: ${[...this.stateAfter.outpoints]}`)
-        await this.stateAfter.apply(tx)
-        logger.debug(`Mempool UTXO after applying transaction: ${[...this.stateAfter.outpoints]}`)
-        this.txs.push(tx)
-        logger.debug(`Added transaction to mempool: ${tx.txid}`)
-        return
-    }
+  async init() {
+    await this.load()
+    logger.debug('Mempool initialized')
+  }
+  getTxIds(): ObjectId[] {
+    const txids = this.txs.map(tx => tx.txid)
 
-    // 1. validate the block,
-    // 2. update the longest Chain Tip and its height
-    // 3. depending on if this is reorg,
-    // -- a. (no reorg),
-    //    -- i. update this.stateAfter: UTXOSet to be exactly the newly arrived block's
-    //    -- ii. try to apply transactions in this.txs to this.stateAfter: UTXOSet
-                      // most of the transactions in txs should already make 
-                      // their way into stateAfter: UTXOSet
-    // -- b. (yes reorg, see https://ee374.stanford.edu/blockchain-foundations.pdf, page 75),
-    //    -- i. validate the block
-    //    -- ii. try to recursively apply transactions FROM the common ancestor B (of
-    //           the new tip and the old tip) TO B_2' (the old tip), by querying the
-    //           txids field in those BlockObject
-    //    -- iii. try to apply transactions in this.txs to this.stateAfter: UTXOSet
-    async onValidBlockArrival(prevChaintip: Block, newChaintip: Block, peer: Peer) {
-        logger.debug(`Validating block for mempool: ${newChaintip.blockid}`)
-        this.longestChainHeight = newChaintip.height
-        this.longestChainTip = newChaintip
-        if (newChaintip.previd == prevChaintip.blockid) {
-            logger.debug(`New longest chain extends previous longest chain`)
-            this.stateAfter = newChaintip.stateAfter?.copy()
-            if (this.stateAfter){
-                logger.debug(`\n\n\n\nMempool UTXO before applying block: ${[...this.stateAfter.outpoints]}\n\n\n`)
-            }
-            if (this.stateAfter === undefined) {
-                logger.warn(`Mempool was not initialized when a transaction arrived`)
-                return
-            }
-            let newTxs: Transaction[] = []
-            for (const tx of this.txs) {
-                try {
-                    await this.stateAfter.apply(tx)
-                    newTxs.push(tx)
-                } catch (e: any) {
-                    logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
-                    logger.debug(`name: ${e.name}. description: ${e.description}`)
-                }
-            }
-            this.txs = newTxs
-        } else {
-            logger.debug(`Reorg might have appearred`)
-            this.stateAfter = newChaintip.stateAfter?.copy()
-            if (this.stateAfter === undefined) {
-                logger.warn(`Mempool was not initialized when a transaction arrived`)
-                return
-            }
-            const txIDs_AncestryA = await this.findRollBackTxs(prevChaintip, newChaintip, peer)
-            let newTxs: Transaction[] = []
-            for (const txs of txIDs_AncestryA) {
-                for (const tx of txs) {
-                    try {
-                        await this.stateAfter.apply(tx)
-                        newTxs.push(tx)
-                    } catch (e: any) {
-                        logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
-                        logger.debug(`name: ${e.name}. description: ${e.description}`)
-                    }
-                }
-            }
-            for (const tx of this.txs) {
-                try {
-                    await this.stateAfter.apply(tx)
-                    newTxs.push(tx)
-                } catch (e: any) {
-                    logger.debug(`tx: ${tx} is not consistent with the new longest chain`)
-                    logger.debug(`name: ${e.name}. description: ${e.description}`)
-                }
-            }
-            this.txs = newTxs
-        }
-        return
-    }
+    logger.debug(`Mempool txids: ${txids}`)
 
-    async findRollBackTxs(blockA: Block | null, blockB: Block | null, peer: Peer) {
-        if (blockA === null || blockA.height === undefined || blockB === null || blockB.height === undefined) {
-            throw new Error(`Chaintip doesn't have valid height`)
-        }
-        const height_diff: number = blockB.height - blockA.height
-        let ancestryA: Block[] = [blockA]
-        let txIDs_AncestryA: Transaction[][] = []
-        for (let i = 0; i < height_diff; i++) {
-            blockB = await blockB.validateAncestry(peer)
-            if (blockB === null) {throw new Error(`Error finding ancestry`)}
-        }
-        while (blockA.height !== undefined && blockA.height >= 0) {
-            if (blockA.blockid === blockB.blockid) { break }
-            blockA = await blockA.validateAncestry(peer)
-            blockB = await blockB.validateAncestry(peer)
-            if (blockA === null) {throw new Error(`Error finding ancestry`)}
-            if (blockB === null) {throw new Error(`Error finding ancestry`)}
-            ancestryA.push(blockA)
-        }
-        for (const block of ancestryA) {
-            txIDs_AncestryA.push(await block.getTxs(peer))
-        }
-        return txIDs_AncestryA
-    }
+    return txids
+  }
+  async fromTxIds(txids: ObjectId[]) {
+    this.txs = []
 
-    async getMempool(): Promise<ObjectId[]> {
-        let txids: ObjectId[] = []
-        for (const tx of this.txs) {
-            txids.push(tx.txid)
-        }
-        return txids
+    for (const txid of txids) {
+      this.txs.push(Transaction.fromNetworkObject(await objectManager.get(txid)))
     }
+  }
+  async save() {
+    if (this.state === undefined) {
+      throw new AnnotatedError('INTERNAL_ERROR', 'Could not save undefined state of mempool to cache.')
+    }
+    await db.put('mempool:txids', this.getTxIds())
+    await db.put('mempool:state', Array.from(this.state.outpoints))
+  }
+  async load() {
+    try {
+      const txids = await db.get('mempool:txids')
+      logger.debug(`Retrieved cached mempool: ${txids}.`)
+      this.fromTxIds(txids)
+    }
+    catch {
+      // start with an empty mempool of no transactions
+    }
+    try {
+      logger.debug(`Loading mempool state from cache`)
+      const outpoints = await db.get('mempool:state')
+      logger.debug(`Outpoints loaded from cache: ${outpoints}`)
+      this.state = new UTXOSet(new Set<string>(outpoints))
+    }
+    catch {
+      // start with an empty state
+      this.state = new UTXOSet(new Set())
+    }
+  }
+  async onTransactionArrival(tx: Transaction): Promise<boolean> {
+    try {
+      await this.state?.apply(tx)
+    }
+    catch (e: any) {
+      // failed to apply transaction to mempool, ignore it
+      logger.debug(`Failed to add transaction ${tx.txid} to mempool: ${e.message}.`)
+      return false
+    }
+    logger.debug(`Added transaction ${tx.txid} to mempool`)
+    this.txs.push(tx)
+    await this.save()
+    return true
+  }
+  async reorg(lca: Block, shortFork: Chain, longFork: Chain) {
+    logger.info('Reorganizing mempool due to longer chain adoption.')
+
+    const oldMempoolTxs: Transaction[] = this.txs
+    let orphanedTxs: Transaction[] = []
+
+    for (const block of shortFork.blocks) {
+      orphanedTxs = orphanedTxs.concat(await block.getTxs())
+    }
+    logger.info(`Old mempool had ${oldMempoolTxs.length} transaction(s): ${oldMempoolTxs}`)
+    logger.info(`${orphanedTxs.length} transaction(s) in ${shortFork.blocks.length} block(s) were orphaned: ${orphanedTxs}`)
+    orphanedTxs = orphanedTxs.concat(oldMempoolTxs)
+
+    this.txs = []
+
+    const tip = longFork.blocks[longFork.blocks.length - 1]
+    if (tip.stateAfter === undefined) {
+      throw new Error(`Attempted a mempool reorg with tip ${tip.blockid} for which no state has been calculted.`)
+    }
+    this.state = tip.stateAfter
+
+    let successes = 0
+    for (const tx of orphanedTxs) {
+      const success = await this.onTransactionArrival(tx)
+
+      if (success) {
+        ++successes
+      }
+    }
+    logger.info(`Re-applied ${successes} transaction(s) to mempool.`)
+    logger.info(`${successes - orphanedTxs.length} transactions were abandoned.`)
+    logger.info(`Mempool reorg completed.`)
+  }
 }
 
-export const mempoolManager = new MempoolManager()
+export const mempool = new MemPool()

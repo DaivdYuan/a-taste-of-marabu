@@ -1,28 +1,34 @@
 import { logger } from './logger'
 import { MessageSocket } from './network'
 import semver from 'semver'
-import { Message,
+import { Messages,
+         Message,
          HelloMessage,
+         PeersMessage, GetPeersMessage,
+         IHaveObjectMessage, GetObjectMessage, ObjectMessage,
+         GetChainTipMessage, ChainTipMessage,
+         ErrorMessage,
+         MessageType,
          HelloMessageType,
          PeersMessageType, GetPeersMessageType,
          IHaveObjectMessageType, GetObjectMessageType, ObjectMessageType,
          GetChainTipMessageType, ChainTipMessageType,
-         GetMempoolMessageType, MempoolMessageType,
          ErrorMessageType,
-         TransactionObject,
+         GetMemPoolMessageType,
+         MempoolMessageType,
          AnnotatedError
         } from './message'
 import { peerManager } from './peermanager'
 import { canonicalize } from 'json-canonicalize'
-import { objectManager } from './object'
+import { db, objectManager } from './object'
 import { network } from './network'
 import { ObjectId } from './object'
 import { chainManager } from './chain'
+import { mempool } from './mempool'
 import { Block } from './block'
 import { Transaction } from './transaction'
-import { mempoolManager } from './mempool'
 
-const VERSION = '0.9.0'
+const VERSION = '0.10.0'
 const NAME = 'Malibu (pset5)'
 
 // Number of peers that each peer is allowed to report to us
@@ -89,7 +95,7 @@ export class Peer {
   async sendMempool(txids: ObjectId[]) {
     this.sendMessage({
       type: 'mempool',
-      txids: txids
+      txids
     })
   }
   async sendError(err: AnnotatedError) {
@@ -132,7 +138,7 @@ export class Peer {
 
     try {
       msg = JSON.parse(message)
-      //this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
+      this.debug(`Parsed message into: ${JSON.stringify(msg)}`)
     }
     catch {
       return await this.fatalError(new AnnotatedError('INVALID_FORMAT', `Failed to parse incoming message as JSON: ${message}`))
@@ -215,7 +221,7 @@ export class Peer {
     const objectid: ObjectId = objectManager.id(msg.object)
     let known: boolean = false
 
-    this.info(`Received object with id ${objectid}`)
+    this.info(`Received object with id ${objectid}: %o`, msg.object)
 
     known = await objectManager.exists(objectid)
 
@@ -223,7 +229,7 @@ export class Peer {
       this.debug(`Object with id ${objectid} is already known`)
     }
     else {
-      this.info(`New object with id ${objectid} downloaded`)
+      this.info(`New object with id ${objectid} downloaded: %o`, msg.object)
 
       // store object even if it is invalid
       await objectManager.put(msg.object)
@@ -232,9 +238,6 @@ export class Peer {
     let instance: Block | Transaction;
     try {
       instance = await objectManager.validate(msg.object, this)
-      if (TransactionObject.guard(msg.object)) {
-        await mempoolManager.onValidTransactionArrival(Transaction.fromNetworkObject(msg.object))
-      }
     }
     catch (e: any) {
       this.sendError(e)
@@ -262,14 +265,17 @@ export class Peer {
     }
     this.sendGetObject(msg.blockid)
   }
-  async onMessageGetMempool(msg: GetMempoolMessageType) {
-    this.sendMempool(await mempoolManager.getMempool())
+  async onMessageGetMempool(msg: GetMemPoolMessageType) {
+    const txids = []
+
+    for (const tx of mempool.txs) {
+      txids.push(tx.txid)
+    }
+    this.sendMempool(txids)
   }
   async onMessageMempool(msg: MempoolMessageType) {
     for (const txid of msg.txids) {
-      if (!await objectManager.exists(txid)) {
-        await objectManager.retrieve(txid, this)
-      }
+      objectManager.retrieve(txid, this) // intentionally delayed
     }
   }
   async onMessageError(msg: ErrorMessageType) {

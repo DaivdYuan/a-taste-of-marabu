@@ -10,7 +10,6 @@ import { logger } from './logger'
 import { Transaction } from './transaction'
 import { chainManager } from './chain'
 import { Deferred } from './promise'
-import { String } from 'runtypes'
 
 const TARGET = '00000000abc00000000000000000000000000000000000000000000000000000'
 const GENESIS: BlockObjectType = {
@@ -38,7 +37,7 @@ export class Block {
   nonce: string
   T: string
   created: number
-  miner: undefined | string
+  miner: string | undefined
   note: string | undefined
   studentids: string[] | undefined
   blockid: string
@@ -173,7 +172,7 @@ export class Block {
     return txs
   }
   async validateTx(peer: Peer, stateBefore: UTXOSet, height: number) {
-    //logger.debug(`Validating ${this.txids.length} transactions of block ${this.blockid}`)
+    logger.debug(`Validating ${this.txids.length} transactions of block ${this.blockid}`)
 
     const stateAfter = stateBefore.copy()
 
@@ -184,7 +183,7 @@ export class Block {
     }
 
     await stateAfter.applyMultiple(txs, this)
-    //logger.debug(`UTXO state of block ${this.blockid} calculated`)
+    logger.debug(`UTXO state of block ${this.blockid} calculated`)
 
     let fees = 0
     for (const tx of txs) {
@@ -215,6 +214,25 @@ export class Block {
 
     this.stateAfter = stateAfter
     logger.debug(`UTXO state of block ${this.blockid} cached: ${JSON.stringify(Array.from(stateAfter.outpoints))}`)
+  }
+  async loadParent(): Promise<Block | null> {
+    let parentBlock: Block
+
+    if (this.previd === null) {
+      return null
+    }
+    try {
+      const parentObject = await objectManager.get(this.previd)
+
+      if (!BlockObject.guard(parentObject)) {
+        return null
+      }
+      parentBlock = await Block.fromNetworkObject(parentObject)
+    }
+    catch (e: any) {
+      return null
+    }
+    return parentBlock
   }
   async validateAncestry(peer: Peer): Promise<Block | null> {
     if (this.previd === null) {
@@ -249,7 +267,7 @@ export class Block {
     return parentBlock
   }
   async validate(peer: Peer) {
-    //logger.debug(`Validating block ${this.blockid}`)
+    logger.debug(`Validating block ${this.blockid}`)
 
     if (blockManager.deferredValidations[this.blockid] !== undefined) {
       logger.debug(`Block ${this.blockid} is already pending validation. Waiting.`)
@@ -266,11 +284,11 @@ export class Block {
       if (this.T !== TARGET) {
         throw new AnnotatedError('INVALID_FORMAT', `Block ${this.blockid} does not specify the fixed target ${TARGET}, but uses target ${this.T} instead.`)
       }
-      //logger.debug(`Block target for ${this.blockid} is valid`)
+      logger.debug(`Block target for ${this.blockid} is valid`)
       if (!this.hasPoW()) {
         throw new AnnotatedError('INVALID_BLOCK_POW', `Block ${this.blockid} does not satisfy the proof-of-work equation; rejecting block.`)
       }
-      //logger.debug(`Block proof-of-work for ${this.blockid} is valid`)
+      logger.debug(`Block proof-of-work for ${this.blockid} is valid`)
 
       let parentBlock: Block | null = null
       let stateBefore: UTXOSet | undefined
@@ -292,7 +310,7 @@ export class Block {
           throw new AnnotatedError('UNFINDABLE_OBJECT', `Parent block of block ${this.blockid} was null`)
         }
 
-        //logger.debug(`Ancestry validation of ${this.blockid} successful.`)
+        logger.debug(`Ancestry validation of ${this.blockid} successful.`)
 
         const parentHeight = parentBlock.height
 
@@ -315,9 +333,9 @@ export class Block {
 
         // this block's starting state is the previous block's ending state
         stateBefore = parentBlock.stateAfter
-        // logger.debug(`Loaded state before block ${this.blockid}`)
+        logger.debug(`Loaded state before block ${this.blockid}`)
       }
-      // logger.debug(`Block ${this.blockid} has valid ancestry`)
+      logger.debug(`Block ${this.blockid} has valid ancestry`)
 
       if (stateBefore === undefined) {
         throw new AnnotatedError('UNFINDABLE_OBJECT', `We have not calculated the state of the parent block,`
@@ -332,7 +350,7 @@ export class Block {
       this.valid = true
       try {
         await this.save()
-        await chainManager.onValidBlockArrival(this, peer)
+        await chainManager.onValidBlockArrival(this)
       } 
       catch (e: any) {
         throw new AnnotatedError('INTERNAL_ERROR', 'Something went wrong is block saving or state calculations.')
@@ -358,11 +376,11 @@ export class Block {
     logger.debug(`Stored valid block ${this.blockid} metadata.`)
   }
   async load() {
-    //logger.debug(`Loading block ${this.blockid} metadata.`)
+    logger.debug(`Loading block ${this.blockid} metadata.`)
 
     const { height, stateAfterOutpoints } = await db.get(`blockinfo:${this.blockid}`)
 
-    //logger.debug(`Block ${this.blockid} metadata loaded from database.`)
+    logger.debug(`Block ${this.blockid} metadata loaded from database.`)
 
     this.height = height
     this.stateAfter = new UTXOSet(new Set<string>(stateAfterOutpoints))
