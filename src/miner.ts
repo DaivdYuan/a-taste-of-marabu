@@ -17,7 +17,6 @@ import { TransactionInputObjectType,
     ErrorMessageType,
     AnnotatedError} from './message'
 import { network } from './network'
-import { setTimeout } from "timers/promises";
 
 const MINING_INTERVAL = 2000
 const NONCE_LEN = 64
