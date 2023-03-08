@@ -62,11 +62,16 @@ class ChainManager {
         this.worker.terminate()
       }
       logger.debug(`spawning miner`)
-      this.worker = new Worker("./dist/miner.js", {workerData: {
+      
+      const worker = new Worker("./dist/miner.js", {workerData: {
         chaintip: this.longestChainTip.blockid,
         height: this.longestChainTip.height,
         txs: mempool.getTxIds(),
       }})
+      worker.on('message', (result: any) => {console.log(result)});
+      worker.on("error", (error: any) => {console.log(error);});
+      worker.on("exit", (exitCode: any) => {console.log(`It exited with code ${exitCode}`);})
+      this.worker = worker
     }
   }
 }
