@@ -16,6 +16,7 @@ import { TransactionInputObjectType,
     SpendingTransactionObject, 
     ErrorMessageType,
     AnnotatedError} from './message'
+import { network } from './network'
 
 const MINING_INTERVAL = 2000
 const NONCE_LEN = 64
@@ -64,34 +65,32 @@ class Miner {
         this.txs = [this.coinBaseTx.txid, ...mempool.getTxIds()]
         this.previd = this.chaintip.blockid
 
-        let mining_obj = {
-            type: 'object',
-            previd: this.previd,
-            txids: this.txs,
-            nonce: "",
-            T: this.target,
-            created: Math.floor(new Date().getTime() / 1000),
-            miner: this.miner,
-            note: "zzz",
-            studentids: this.studentids
-        }
         let nonce = 0;
         while (true) {
-            mining_obj.nonce = String(nonce).padStart(NONCE_LEN, '0')
-            if (!BlockObject.guard(mining_obj)) {
-                throw new Error('Error creating block')
-            }
-            let blockid = (await Block.fromNetworkObject(mining_obj)).blockid
+            let mined_block = new Block(
+                this.previd,
+                this.txs,
+                String(nonce).padStart(NONCE_LEN, '0'),
+                this.target,
+                Math.floor(new Date().getTime() / 1000),
+                this.miner,
+                "zzz",
+                this.studentids
+            )
+            let blockid = mined_block.blockid
             if (blockid < this.target) {
-                // success
-                // 1. store into our database
-                // 2. broadcast to peers
+                logger.debug("MINING SUCCESS.")
+                await mined_block.validate(network.peers[0])
+                network.broadcast({
+                    type: 'ihaveobject',
+                    blockid
+                  })
             }
             nonce++;
         }
     }
 
-    init() {
+    async init() {
         try {
             setInterval(this.mine, MINING_INTERVAL)
         } catch (e) {
