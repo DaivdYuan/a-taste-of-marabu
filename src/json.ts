@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync } from 'fs'
 
 const JSON_PATH = "miner_data.json";
+const OUTPUT_PATH = "output.txt";
 
 // write json file
 export function writeJsonFile(field:string, data: any) {
@@ -15,4 +16,10 @@ export function writeJsonFile(field:string, data: any) {
 // load json file
 export function loadJsonFile() {
     return JSON.parse(readFileSync(JSON_PATH, 'utf8'));
+}
+
+
+// write output file
+export function writeOutputFile(data: any, file_name = OUTPUT_PATH) {
+    writeFileSync(file_name, JSON.stringify(data));
 }

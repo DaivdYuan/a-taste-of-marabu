@@ -12,7 +12,7 @@ import { TransactionInputObjectType,
     SpendingTransactionObject, 
     ErrorMessageType,
     AnnotatedError} from './message'
-import { loadJsonFile } from './json';
+import { loadJsonFile, writeOutputFile } from './json';
 import net from 'net';
 import delay from 'delay';
 
@@ -23,7 +23,7 @@ const SERVER_PORT = 18018;
 
 const client = new net.Socket();
 
-var flag = false;;
+var flag = false
 client.connect(SERVER_PORT, SERVER_HOST, async () => {
     console.log('Connected to server');
     client.write(`{"agent":"Malibu (pset5)","type":"hello","version":"0.10.0"}\n`)
@@ -39,8 +39,9 @@ client.on('data', (data: Buffer) => {
     console.log(`Received data from server: ${data.toString()}`);
 });
 
-function sendToServer(data: object) {
+function sendToServer(data: object, file_name: string) {
     client.write(canonicalize(data)+"\n");
+    writeOutputFile(data, file_name+".txt");
 }
 
 function randomPrefix(len: number = NONCE_LEN) {
@@ -91,22 +92,25 @@ class Miner {
         this.json = loadJsonFile()
         this.chaintip = this.json.chainTip
         if (this.chaintip == null) {
-            logger.warn("no chaintip... skip mining")
+            console.log("no chaintip... skip mining")
             return
         }
         this.height = this.json.chainHeight + 1
         this.coinBaseTx = await this.createCoinBaseTx() // need to store coinbase tx TODO
         if (this.coinBaseTx == null) {
-            logger.warn("no coinbase tx... skip mining")
+            console.log("no coinbase tx... skip mining")
             return
         }
         this.txid = hash(canonicalize(this.coinBaseTx))
         this.txs = [this.txid, ...this.json.txids]
         this.previd = this.chaintip
-        logger.info(`mining with chaintip ${this.chaintip}, new height: ${this.height}, txs: ${this.txs}`)
         
-        while (!flag) { await delay(1000) }
+        while (!flag) { 
+            console.log("waiting for connection...")
+            await delay(1000) 
+        }
 
+        console.log("Mining...")
         let nonce = 0;
         let mined_block = {
             type: 'block',
@@ -123,7 +127,7 @@ class Miner {
             mined_block.nonce = prefix + String(nonce).padStart(NONCE_LEN, '0')
             let blockid = hash(canonicalize(mined_block))
 
-            //console.log("nonce: ", mined_block.nonce, " blockid: " + blockid, "\n") 
+            console.log("nonce: ", mined_block.nonce, " blockid: " + blockid, "\n") 
 
             if (blockid < this.target) {
                 console.log("MINING SUCCESS.")
@@ -139,15 +143,15 @@ class Miner {
                 sendToServer({
                     type: 'object',
                     object: mined_block
-                })
+                }, "mined_block")
                 sendToServer({
                     type: 'object',
                     object: this.coinBaseTx
-                })
+                }, "mined_transaction")
                 return
             }
             nonce++;
-            if (nonce % 50000 == 49999) {
+            if (nonce % 500000 == 499999) {
                 console.log("Tried: ", nonce, " times.\n")
             }
         }
@@ -160,7 +164,7 @@ const miner = new Miner()
 async function main() {
     while (true) {
         for (let i = 0; i < 100; i++) {
-            miner.mine()
+            await miner.mine()
         }            
         await miner.mine()
     }
