@@ -41,13 +41,13 @@ class PeerManager {
 
     this.knownPeers.add(peerAddr)
     this.store() // intentionally delayed await
-    logger.info(`Known peers: ${this.knownPeers.size}`)
+    //logger.info(`Known peers: ${this.knownPeers.size}`)
   }
   peerFailed(peerAddr: string) {
-    logger.warn(`Removing known peer, as it is considered faulty`)
+    //logger.warn(`Removing known peer, as it is considered faulty`)
     this.knownPeers.delete(peerAddr)
     this.store() // intentionally delayed await
-    logger.info(`Known peers: ${this.knownPeers.size}`)
+    //logger.info(`Known peers: ${this.knownPeers.size}`)
   }
 }
 

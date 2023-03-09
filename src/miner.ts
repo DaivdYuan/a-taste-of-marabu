@@ -17,6 +17,7 @@ import { TransactionInputObjectType,
     ErrorMessageType,
     AnnotatedError} from './message'
 import { network } from './network'
+import { objectManager } from './object';
 const {parentPort, workerData} = require("worker_threads");
 
 const NONCE_LEN = 64
@@ -38,7 +39,7 @@ class Miner {
     currentBlock: Block | null = null;
     chaintip: string | null = null;
 
-    createCoinBaseTx(): Transaction {
+    async createCoinBaseTx(): Promise<Transaction> {
         let txobj = {
             type: "transaction",
             height: this.height,
@@ -52,6 +53,8 @@ class Miner {
         if (!CoinbaseTransactionObject.guard(txobj)) {
             throw new Error('Error creating coinbase Tx')
         }
+        let tx = Transaction.fromNetworkObject(txobj)
+        await tx.validate()
         return Transaction.fromNetworkObject(txobj)
     }
 
@@ -60,8 +63,8 @@ class Miner {
 
         this.chaintip = CHAINTIP
         this.height = HEIGHT + 1
-        logger.debug(`mining with chaintip ${this.chaintip}, neww height: ${this.height}`)
-        this.coinBaseTx = this.createCoinBaseTx() // need to store coinbase tx TODO
+        logger.info(`mining with chaintip ${this.chaintip}, new height: ${this.height}`)
+        this.coinBaseTx = await this.createCoinBaseTx() // need to store coinbase tx TODO
         this.txs = [this.coinBaseTx.txid, ...TXS]
         this.previd = this.chaintip
 
@@ -79,12 +82,17 @@ class Miner {
             )
             let blockid = mined_block.blockid
             if (blockid < this.target) {
-                logger.debug("MINING SUCCESS.")
+                logger.info("MINING SUCCESS.")
                 await mined_block.validate(network.peers[0])
                 network.broadcast({
                     type: 'ihaveobject',
-                    blockid
-                  })
+                    objectid: blockid
+                })
+                await objectManager.put(this.coinBaseTx)
+                network.broadcast({
+                    type: 'ihaveobject',
+                    objectid: this.coinBaseTx.txid
+                })
             }
             nonce++;
             if (nonce % 50000 == 49999) {logger.debug("tried 50000 nounces")}

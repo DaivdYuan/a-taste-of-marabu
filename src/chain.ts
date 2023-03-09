@@ -2,12 +2,12 @@ import { Block } from "./block";
 import { logger } from "./logger";
 import { mempool } from "./mempool";
 import { db } from "./object";
-const { Worker } = require('worker_threads')
+import { writeJsonFile } from "./json";
 
 class ChainManager {
   longestChainHeight: number = 0
   longestChainTip: Block | null = null
-  worker: Worker | null = null
+  //worker: Worker | null = null
 
   async init() {
     let tip, height, inited = false
@@ -15,11 +15,11 @@ class ChainManager {
     try {
       [tip, height] = await db.get('longestchain')
       logger.debug(`Retrieved cached longest chain tip ${tip.blockid} at height ${height}.`)
-    }
-    catch {
+      this.saveJson()
+    } catch {
       tip = await Block.makeGenesis()
       height = 0
-      logger.debug(`No cached longest chain exists. Initializing to genesis ${tip.blockid} at height ${height}.`)
+      //logger.debug(`No cached longest chain exists. Initializing to genesis ${tip.blockid} at height ${height}.`)
       inited = true
     }
     this.longestChainTip = await Block.fromNetworkObject(tip)
@@ -27,10 +27,17 @@ class ChainManager {
     if (inited) {
       await this.save()
     }
-    logger.debug(`Chain manager initialized.`)
+    //logger.debug(`Chain manager initialized.`)
+    //this.spawnMiner()
+
   }
   async save() {
     await db.put('longestchain', [this.longestChainTip, this.longestChainHeight])
+    this.saveJson()
+  }
+  saveJson() {
+    writeJsonFile('chainTip', this.longestChainTip?.blockid)
+    writeJsonFile('chainHeight', this.longestChainHeight)
   }
   async onValidBlockArrival(block: Block) {
     if (!block.valid) {
@@ -58,22 +65,30 @@ class ChainManager {
       this.longestChainTip = block
       await mempool.reorg(lca, shortFork, longFork)
       await this.save()
-      if (this.worker != null) {
-        this.worker.terminate()
-      }
-      logger.debug(`spawning miner`)
-      
-      const worker = new Worker("./dist/miner.js", {workerData: {
-        chaintip: this.longestChainTip.blockid,
-        height: this.longestChainTip.height,
-        txs: mempool.getTxIds(),
-      }})
-      worker.on('message', (result: any) => {console.log(result)});
-      worker.on("error", (error: any) => {console.log(error);});
-      worker.on("exit", (exitCode: any) => {console.log(`It exited with code ${exitCode}`);})
-      this.worker = worker
+      //this.spawnMiner()
     }
   }
+  /*
+  spawnMiner() {  
+    if (this.longestChainTip === null || this.longestChainHeight === null) {
+      return;
+    }
+    if (this.worker != null) {
+      this.worker.terminate()
+    }
+    logger.info(`Spawning miner`)
+    
+    const worker = new Worker("../dist/miner.js", {workerData: {
+      chaintip: this.longestChainTip.blockid,
+      height: this.longestChainTip.height,
+      txs: mempool.getTxIds(),
+    }})
+    worker.on('message', (result: any) => {console.log(result)});
+    worker.on("error", (error: any) => {console.log(error);});
+    worker.on("exit", (exitCode: any) => {console.log(`It exited with code ${exitCode}`);})
+    this.worker = worker
+  }
+  */
 }
 
 export class Chain {

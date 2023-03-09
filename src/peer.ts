@@ -113,7 +113,7 @@ export class Peer {
   }
   async fatalError(err: AnnotatedError) {
     await this.sendError(err)
-    this.warn(`Peer error: ${err}`)
+    // this.warn(`Peer error: ${err}`)
     this.fail()
   }
   async fail() {
@@ -183,7 +183,7 @@ export class Peer {
   }
   async onMessagePeers(msg: PeersMessageType) {
     for (const peer of msg.peers.slice(0, MAX_PEERS_PER_PEER)) {
-      this.info(`Remote party reports knowledge of peer ${peer}`)
+      // this.info(`Remote party reports knowledge of peer ${peer}`)
 
       peerManager.peerDiscovered(peer)
     }
@@ -275,7 +275,11 @@ export class Peer {
   }
   async onMessageMempool(msg: MempoolMessageType) {
     for (const txid of msg.txids) {
-      objectManager.retrieve(txid, this) // intentionally delayed
+      try {
+        await objectManager.retrieve(txid, this) // intentionally delayed
+      } catch (e) {
+        this.warn(`Failed to retrieve tx ${txid} from mempool: ${e}`)
+      }
     }
   }
   async onMessageError(msg: ErrorMessageType) {

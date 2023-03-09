@@ -5,6 +5,7 @@ import { AnnotatedError } from './message'
 import { db, ObjectId, objectManager } from './object'
 import { Transaction } from './transaction'
 import { UTXOSet } from './utxo'
+import { writeJsonFile } from './json'
 
 class MemPool {
   txs: Transaction[] = []
@@ -34,12 +35,14 @@ class MemPool {
     }
     await db.put('mempool:txids', this.getTxIds())
     await db.put('mempool:state', Array.from(this.state.outpoints))
+    writeJsonFile('txids', this.getTxIds())
   }
   async load() {
     try {
       const txids = await db.get('mempool:txids')
       logger.debug(`Retrieved cached mempool: ${txids}.`)
       this.fromTxIds(txids)
+      writeJsonFile('txids', this.getTxIds())
     }
     catch {
       // start with an empty mempool of no transactions
