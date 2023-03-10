@@ -133,6 +133,9 @@ export class Block {
     if (this.studentids !== undefined) {
       netObj.studentids = this.studentids
     }
+    if (this.miner !== undefined) {
+      netObj.miner = this.miner
+    }
     return netObj
   }
   hasPoW(): boolean {

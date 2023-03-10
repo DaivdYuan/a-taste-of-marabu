@@ -1,7 +1,7 @@
 import { hash } from './crypto/hash'
 import { canonicalize } from 'json-canonicalize';
 import { logger } from "./logger";
-import { OUR_PUBLIC_KEY } from './crypto/signature';
+import { OUR_PUBLIC_KEY, sign } from './crypto/signature';
 import { TransactionInputObjectType,
     TransactionObjectType,
     TransactionObject,
@@ -18,6 +18,7 @@ import delay from 'delay';
 
 const NONCE_LEN = 32
 
+//const SERVER_HOST = '149.28.200.131';
 const SERVER_HOST = '0.0.0.0';
 const SERVER_PORT = 18018;
 
@@ -75,7 +76,7 @@ class Miner {
             outputs: [
                 {
                     pubkey: OUR_PUBLIC_KEY,
-                    value: 50000000000
+                    value: 50000000000000
                 }
             ]
         }
@@ -102,7 +103,7 @@ class Miner {
             return
         }
         this.txid = hash(canonicalize(this.coinBaseTx))
-        this.txs = [this.txid, ...this.json.txids]
+        this.txs = [this.txid]
         this.previd = this.chaintip
         
         while (!flag) { 
@@ -127,7 +128,7 @@ class Miner {
             mined_block.nonce = prefix + String(nonce).padStart(NONCE_LEN, '0')
             let blockid = hash(canonicalize(mined_block))
 
-            console.log("nonce: ", mined_block.nonce, " blockid: " + blockid, "\n") 
+            //console.log("nonce: ", mined_block.nonce, " blockid: " + blockid, "\n") 
 
             if (blockid < this.target) {
                 console.log("MINING SUCCESS.")
@@ -163,11 +164,39 @@ const miner = new Miner()
 
 async function main() {
     while (true) {
-        for (let i = 0; i < 100; i++) {
-            await miner.mine()
-        }            
-        await miner.mine()
+        try {
+            for (let i = 0; i < 100; i++) {
+                await miner.mine()
+            }          
+        } catch (e) { }
     }
 }
 
 main()
+
+function sendTransaction() {
+    let txobj = {
+        type: "transaction",
+        inputs: [
+            {
+                outpoint: {
+                    txid: "769d669ad2fc14098189115ed782ce7155a64556d6aadae1da712473191daa0e",
+                    index: 0
+                },
+                sig: null
+            }
+        ],
+        outputs: [
+            {
+                pubkey: "3f0bc71a375b574e4bda3ddf502fe1afd99aa020bf6049adfe525d9ad18ff33f",
+                value: 50000000000000
+            }
+        ]
+    }
+
+
+    sendToServer({
+        type: 'object',
+        object: txobj
+    }, "transaction")
+}

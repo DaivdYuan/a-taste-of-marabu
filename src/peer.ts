@@ -32,7 +32,7 @@ const VERSION = '0.10.0'
 const NAME = 'Malibu (pset5)'
 
 // Number of peers that each peer is allowed to report to us
-const MAX_PEERS_PER_PEER = 30
+const MAX_PEERS_PER_PEER = 45
 
 export class Peer {
   active: boolean = false
