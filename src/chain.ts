@@ -14,7 +14,7 @@ class ChainManager {
 
     try {
       [tip, height] = await db.get('longestchain')
-      logger.debug(`Retrieved cached longest chain tip ${tip.blockid} at height ${height}.`)
+      logger.info(`Retrieved cached longest chain tip ${tip.blockid} at height ${height}.`)
       this.saveJson()
     } catch {
       tip = await Block.makeGenesis()
