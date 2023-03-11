@@ -124,7 +124,6 @@ export class Block {
       nonce: this.nonce,
       T: this.T,
       created: this.created,
-      miner: this.miner,
     }
 
     if (this.note !== undefined) {

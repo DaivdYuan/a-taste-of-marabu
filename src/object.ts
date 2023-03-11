@@ -13,7 +13,7 @@ import { Deferred, delay, resolveToReject } from './promise'
 import { mempool } from './mempool'
 
 export const db = new level('./db')
-const OBJECT_AVAILABILITY_TIMEOUT = 5000 // ms
+const OBJECT_AVAILABILITY_TIMEOUT = 30000 // ms
 
 class ObjectManager {
   deferredObjects: { [key: string]: Deferred<ObjectType>[] } = {}

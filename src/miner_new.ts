@@ -103,7 +103,7 @@ class Miner {
             return
         }
         this.txid = hash(canonicalize(this.coinBaseTx))
-        this.txs = [this.txid]
+        this.txs = [this.txid, ...this.json.txids]
         this.previd = this.chaintip
         
         while (!flag) { 
@@ -168,7 +168,9 @@ async function main() {
             for (let i = 0; i < 100; i++) {
                 await miner.mine()
             }          
-        } catch (e) { }
+        } catch (e) {
+            console.log(e)
+        }
     }
 }
 
